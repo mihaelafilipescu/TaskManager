@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\sim\\OneDrive\\Desktop\\FMI unibuc\\ANUL 2\\.NET\\PROIECT\\TaskManager\\TaskManager\\TaskManager.csproj": {}
+    "C:\\Users\\MINALP1\\source\\repos\\TaskManager\\TaskManager\\TaskManager\\TaskManager.csproj": {}
   },
   "projects": {
-    "C:\\Users\\sim\\OneDrive\\Desktop\\FMI unibuc\\ANUL 2\\.NET\\PROIECT\\TaskManager\\TaskManager\\TaskManager.csproj": {
+    "C:\\Users\\MINALP1\\source\\repos\\TaskManager\\TaskManager\\TaskManager\\TaskManager.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\sim\\OneDrive\\Desktop\\FMI unibuc\\ANUL 2\\.NET\\PROIECT\\TaskManager\\TaskManager\\TaskManager.csproj",
+        "projectUniqueName": "C:\\Users\\MINALP1\\source\\repos\\TaskManager\\TaskManager\\TaskManager\\TaskManager.csproj",
         "projectName": "TaskManager",
-        "projectPath": "C:\\Users\\sim\\OneDrive\\Desktop\\FMI unibuc\\ANUL 2\\.NET\\PROIECT\\TaskManager\\TaskManager\\TaskManager.csproj",
-        "packagesPath": "C:\\Users\\sim\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\sim\\OneDrive\\Desktop\\FMI unibuc\\ANUL 2\\.NET\\PROIECT\\TaskManager\\TaskManager\\obj\\",
+        "projectPath": "C:\\Users\\MINALP1\\source\\repos\\TaskManager\\TaskManager\\TaskManager\\TaskManager.csproj",
+        "packagesPath": "C:\\Users\\MINALP1\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\MINALP1\\source\\repos\\TaskManager\\TaskManager\\TaskManager\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\sim\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Users\\MINALP1\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
