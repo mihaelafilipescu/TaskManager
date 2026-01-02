@@ -18,7 +18,8 @@ html {
 }
 
 body {
-  margin-bottom: 60px;
+    margin-bottom: 60px;
+    font-family: Montserrat;
 }
 
 .form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
@@ -28,4 +29,38 @@ body {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
+}
+:root {
+    --albastru-inchis: rgb(14, 16, 61);
+    --rosu: #570000;
+    --verde-mut: rgb(67, 100, 54);
+    --roz: rgb(255, 194, 192);
+    --portocaliu: rgb(250, 169, 22);
+    --verde-viu: #539638;
+}
+
+/* stari */
+.warning{
+    background-color: var(--portocaliu);
+    color: white;
+}
+.alerta {
+    background-color: var(--rosu);
+    color: white;
+}
+.bine {
+    background-color: var(--verde-mut);
+    color: white;
+}
+.progres {
+    background-color: var(--roz);
+    color: black;
+}
+.static {
+    background-color: var(--albastru-inchis);
+    color: white;
+}
+.functional {
+    background-color: var(--verde-viu);
+    color: white;
 }
