@@ -5,9 +5,9 @@
     using System.Collections.Generic;
     public class ApplicationUser : IdentityUser 
     {
-        public string FullName { get; set; } = default!;
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        public bool IsActive { get; set; } = true;
+        public string? FullName { get; set; } = default!;
+        public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool? IsActive { get; set; } = true;
 
         // relatii
         public ICollection<Project> OrganizedProjects { get; set; } = new List<Project>();
