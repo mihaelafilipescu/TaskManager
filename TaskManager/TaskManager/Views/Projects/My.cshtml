@@ -82,12 +82,16 @@
 
                         <div class="card-footer bg-transparent border-0 px-4 pb-4">
                             <div class="d-flex gap-2">
-                                @* Pregătire pentru Task 3: Details *@
-                                <button class="btn btn-outline-secondary w-100" disabled>
-                                    <i class="bi bi-eye"></i> View details (coming soon)
-                                </button>
+                                <!-- Link catre pagina de membri a proiectului -->
+                                <a class="btn btn-outline-secondary w-100"
+                                   asp-controller="Projects"
+                                   asp-action="Members"
+                                   asp-route-id="@p.Id">
+                                    <i class="bi bi-people"></i> Members
+                                </a>
                             </div>
                         </div>
+
                     </div>
                 </div>
             }

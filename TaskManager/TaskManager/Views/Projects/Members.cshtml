@@ -1,0 +1,129 @@
+﻿@model TaskManager.ViewModels.Projects.ProjectMembersVm
+
+@{
+    ViewData["Title"] = "Project members";
+}
+
+<div class="container py-5">
+    <div class="row align-items-end g-3 mb-4">
+        <div class="col-12 col-lg-8">
+            <span class="badge text-bg-light border mb-3">Team</span>
+            <h1 class="display-6 fw-bold mb-2">Members</h1>
+            <p class="text-secondary mb-0">
+                Project: <strong>@Model.ProjectTitle</strong>
+            </p>
+        </div>
+
+        <div class="col-12 col-lg-4 d-flex justify-content-lg-end">
+            <a class="btn btn-outline-secondary btn-lg"
+               asp-controller="Projects"
+               asp-action="My">
+                <i class="bi bi-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
+    }
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-5">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-2">Add member</h5>
+                    <p class="text-secondary mb-3">
+                        Add a user by <strong>email</strong> or <strong>username</strong>.
+                    </p>
+
+                    @if (!Model.IsOrganizer)
+                    {
+                        <div class="alert alert-warning mb-0">
+                            Only the organizer can manage members.
+                        </div>
+                    }
+                    else
+                    {
+                        <form asp-action="AddMember" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="ProjectId" />
+
+                            <div class="mb-3">
+                                <label asp-for="UserIdentifier" class="form-label fw-semibold"></label>
+                                <input asp-for="UserIdentifier" class="form-control form-control-lg"
+                                       placeholder="e.g., ana22 or ana@gmail.com" />
+                                <span asp-validation-for="UserIdentifier" class="text-danger"></span>
+                            </div>
+
+                            <button class="btn btn-success btn-lg" type="submit">
+                                <i class="bi bi-person-plus"></i> Add
+                            </button>
+                        </form>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-7">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold mb-0">Current members</h5>
+                        <span class="badge text-bg-light border">@Model.Members.Count</span>
+                    </div>
+
+                    @if (!Model.Members.Any())
+                    {
+                        <div class="alert alert-info mb-0">No members yet.</div>
+                    }
+                    else
+                    {
+                        <div class="list-group">
+                            @foreach (var m in Model.Members)
+                            {
+                                <div class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold">@m.FullName</div>
+                                        <div class="small text-secondary">
+                                            @@@m.UserName • @m.Email
+                                        </div>
+                                    </div>
+
+                                    @if (m.UserId == Model.OrganizerId)
+                                    {
+                                        <!-- Organizatorul proiectului: badge verde, fara Remove -->
+                                        <span class="badge text-bg-success">
+                                            <i class="bi bi-star-fill"></i> Organizer
+                                        </span>
+                                    }
+                                    else if (Model.IsOrganizer)
+                                    {
+                                        <!-- Doar organizatorul poate elimina membri -->
+                                        <form asp-action="RemoveMember" method="post" class="m-0">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="projectId" value="@Model.ProjectId" />
+                                            <input type="hidden" name="memberId" value="@m.UserId" />
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">
+                                                <i class="bi bi-person-dash"></i> Remove
+                                            </button>
+                                        </form>
+                                    }
+
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
