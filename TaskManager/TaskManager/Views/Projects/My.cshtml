@@ -82,15 +82,24 @@
 
                         <div class="card-footer bg-transparent border-0 px-4 pb-4">
                             <div class="d-flex gap-2">
-                                <!-- Link catre pagina de membri a proiectului -->
+                                <!-- Members -->
                                 <a class="btn btn-outline-secondary w-100"
                                    asp-controller="Projects"
                                    asp-action="Members"
                                    asp-route-id="@p.Id">
                                     <i class="bi bi-people"></i> Members
                                 </a>
+
+                                <!-- Task-uri -->
+                                <a class="btn btn-outline-primary w-100"
+                                   asp-controller="TaskItems"
+                                   asp-action="Index"
+                                   asp-route-projectId="@p.Id">
+                                    <i class="bi bi-list-check"></i> Task-uri
+                                </a>
                             </div>
                         </div>
+
 
                     </div>
                 </div>

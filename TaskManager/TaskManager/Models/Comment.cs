@@ -7,7 +7,7 @@
         public int Id { get; set; }
 
         public int TaskId { get; set; }
-        public Task Task { get; set; } = default!;
+        public TaskItem TaskItem { get; set; } = default!;
 
         public string UserId { get; set; } = default!;
         public ApplicationUser User { get; set; } = default!;

@@ -15,7 +15,7 @@ namespace TaskManager.Data
         // Tabelele din baza de date
         public DbSet<Project> Projects { get; set; }
         public DbSet<ProjectMember> ProjectMembers { get; set; }
-        public DbSet<TaskManager.Models.Task> Tasks { get; set; }
+        public DbSet<TaskItem> TaskItems { get; set; }
         public DbSet<TaskAssignment> TaskAssignments { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<ProjectSummary> ProjectSummaries { get; set; }
@@ -51,15 +51,15 @@ namespace TaskManager.Data
                 .IsUnique();
 
             //3. Project - Task
-            builder.Entity<TaskManager.Models.Task>()
+            builder.Entity<TaskItem>()
                 .HasOne(t => t.Project)//un task aparine unui proiect
-                .WithMany(p => p.Tasks)//un proiect are mai multe taskuri
+                .WithMany(p => p.TaskItems)//un proiect are mai multe taskuri
                 .HasForeignKey(t => t.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);//daca stergem proiectul se sterg toate taskurile
 
             //4. Task - TaskAssignment
             builder.Entity<TaskAssignment>()
-                .HasOne(ta => ta.Task)//fiecare TaskAssignment apartine unui Task
+                .HasOne(ta => ta.TaskItem)//fiecare TaskAssignment apartine unui Task
                 .WithMany(t => t.Assignments)//un task poate fi assigned mai multor persoane
                 .HasForeignKey(ta => ta.TaskId)
                 .OnDelete(DeleteBehavior.NoAction);//daca se sterge un task se sterg si asignarile
@@ -79,7 +79,7 @@ namespace TaskManager.Data
 
             //6. Task - Comment
             builder.Entity<Comment>()
-                .HasOne(c => c.Task)//un comentariu apartine unui task
+                .HasOne(c => c.TaskItem)//un comentariu apartine unui task
                 .WithMany(t => t.Comments)//un task poate avea mai multe comentarii
                 .HasForeignKey(c => c.TaskId)
                 .OnDelete(DeleteBehavior.NoAction);

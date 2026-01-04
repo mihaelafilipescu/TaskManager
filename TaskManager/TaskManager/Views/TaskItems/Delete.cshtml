@@ -1,0 +1,14 @@
+﻿@model TaskManager.Models.TaskItem
+@{
+    ViewData["Title"] = "Delete Task";
+}
+
+<h2>Delete Task</h2>
+
+<p>Sigur vrei să ștergi task-ul <b>@Model.Title</b>?</p>
+
+<form method="post">
+    @Html.AntiForgeryToken()
+    <button class="btn btn-danger" type="submit">Delete</button>
+    <a class="btn btn-secondary" href="@Url.Action("Index", "TaskItems", new { projectId = Model.ProjectId })">Back</a>
+</form>

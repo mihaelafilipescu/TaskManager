@@ -1,0 +1,22 @@
+﻿@model TaskManager.Models.TaskItem
+@{
+    ViewData["Title"] = "Create Task";
+}
+
+<h2>Create Task</h2>
+
+<form action="/Projects/@Model.ProjectId/TaskItems/Create" method="post">
+    @Html.AntiForgeryToken()
+
+    <input type="hidden" asp-for="ProjectId" />
+
+    <partial name="_Form" model="Model" />
+
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-secondary"
+       href="/Projects/@Model.ProjectId/TaskItems">Back</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

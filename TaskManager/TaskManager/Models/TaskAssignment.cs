@@ -6,7 +6,7 @@
         public int Id { get; set; }
 
         public int TaskId { get; set; }
-        public TaskManager.Models.Task Task { get; set; }
+        public TaskItem TaskItem { get; set; }
 
         public string UserId { get; set; } = default!;
         public ApplicationUser User { get; set; } = default!;

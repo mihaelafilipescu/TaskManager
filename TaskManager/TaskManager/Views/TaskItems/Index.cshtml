@@ -1,0 +1,41 @@
+﻿@model List<TaskManager.Models.TaskItem>
+@{
+    var project = ViewBag.Project as TaskManager.Models.Project;
+    ViewData["Title"] = "Task-uri";
+}
+
+<h2>Task-uri - @project?.Title</h2>
+
+<p>
+    <a class="btn btn-primary"
+       href="@Url.Action("Create", "TaskItems", new { projectId = project!.Id })">
+        Create Task
+    </a>
+</p>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Title</th>
+            <th>Status</th>
+            <th>Start</th>
+            <th>End</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            <tr>
+                <td>@t.Title</td>
+                <td>@t.Status</td>
+                <td>@t.StartDate</td>
+                <td>@t.EndDate</td>
+                <td>
+                    <a href="@Url.Action("Edit", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">Edit</a> |
+                    <a href="@Url.Action("Delete", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">Delete</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

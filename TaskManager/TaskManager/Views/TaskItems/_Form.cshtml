@@ -1,0 +1,60 @@
+﻿@model TaskManager.Models.TaskItem
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+
+<div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+<div class="mb-3">
+    <label asp-for="Title" class="form-label"></label>
+    <input asp-for="Title" class="form-control" />
+    <span asp-validation-for="Title" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Description" class="form-label"></label>
+    <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+    <span asp-validation-for="Description" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Status" class="form-label"></label>
+    <select asp-for="Status" class="form-select"
+            asp-items="Html.GetEnumSelectList<TaskManager.Models.TaskStatus>()"></select>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="StartDate" class="form-label"></label>
+        @Html.TextBoxFor(
+        m => m.StartDate,
+                "{0:yyyy-MM-dd}",
+                new { @class = "form-control", type = "date" }
+                )
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="EndDate" class="form-label"></label>
+        @Html.TextBoxFor(
+                m => m.EndDate,
+                "{0:yyyy-MM-dd}",
+                new { @class = "form-control", type = "date" }
+                )
+        <span asp-validation-for="EndDate" class="text-danger"></span>
+    </div>
+</div>
+
+
+
+<div class="mb-3">
+    <label asp-for="MediaType" class="form-label"></label>
+    <select asp-for="MediaType" class="form-select"
+            asp-items="Html.GetEnumSelectList<TaskManager.Models.MediaType>()"></select>
+</div>
+
+<div class="mb-3">
+    <label asp-for="MediaContent" class="form-label"></label>
+    <textarea asp-for="MediaContent" class="form-control" rows="3"></textarea>
+    <span asp-validation-for="MediaContent" class="text-danger"></span>
+</div>
