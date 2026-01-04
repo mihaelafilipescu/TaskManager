@@ -74,12 +74,16 @@ namespace TaskManager.Controllers
 
             var projects = await _db.Projects
                 .AsNoTracking()
-                .Where(p => p.OrganizerId == userId)
+                .Where(p =>
+                    p.OrganizerId == userId ||
+                    p.Members.Any(pm => pm.UserId == userId)
+                )
                 .OrderByDescending(p => p.CreatedAt)
                 .ToListAsync();
 
             return View(projects);
         }
+
 
         // GET: /Projects/Members/5
         [HttpGet]
