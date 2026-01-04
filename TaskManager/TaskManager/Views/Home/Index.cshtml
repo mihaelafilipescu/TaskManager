@@ -10,38 +10,38 @@
         <div class="col-lg-7">
             <span class="badge text-bg-light border mb-3">Task Management Platform</span>
             <h1 class="display-5 fw-bold mb-3">
-                Planifica proiecte. Asigneaza task-uri. Urmareste progresul.
+                Plan projects. Assign tasks. Track progress.
             </h1>
             <p class="lead text-secondary mb-4">
-                TaskManager este o platforma web pentru echipe: proiecte, membri, task-uri, comentarii,
-                dashboard personal si rezumat AI pentru fiecare proiect.
+                TaskManager is a web platform for teams: projects, members, tasks, comments,
+                a personal dashboard, and AI-powered summaries for each project.
             </p>
 
             <div class="d-flex flex-wrap gap-2">
                 @if (!isAuth)
                 {
-                    <a class="btn static btn-lg" asp-area="Identity" asp-page="/Account/Register">
-                        Creeaza cont
+                    <a class="btn static btn-lg" asp-controller="Account" asp-action="Register">
+                        Register
                     </a>
-                    <a class="btn btn-outline-secondary btn-lg" asp-area="Identity" asp-page="/Account/Login">
-                        Autentificare
+                    <a class="btn btn-outline-secondary btn-lg" asp-controller="Account" asp-action="Login">
+                        Login
                     </a>
                 }
                 else
                 {
                     <a class="btn btn-success btn-lg" asp-controller="Dashboard" asp-action="Index">
-                        Dashboard-ul meu
+                        My Dashboard
                     </a>
-                    <a class="btn btn-outline-secondary btn-lg" asp-controller="Projects" asp-action="Index">
-                        Proiectele mele
+                    <a class="btn btn-outline-secondary btn-lg" asp-controller="Projects" asp-action="My">
+                        My projects
                     </a>
                 }
             </div>
 
             <div class="mt-4 small text-secondary">
-                <i class="bi bi-box2-heart-fill"></i><span class="me-3"> Deadline-uri clare</span>
-                <i class="bi bi-box2-heart-fill"></i><span class="me-3"> Statusuri standard</span>
-                <i class="bi bi-box2-heart-fill"></i><span class="me-3"> Colaborare in echipa</span>
+                <i class="bi bi-box2-heart-fill"></i><span class="me-3"> Clear deadlines</span>
+                <i class="bi bi-box2-heart-fill"></i><span class="me-3"> Standard statuses</span>
+                <i class="bi bi-box2-heart-fill"></i><span class="me-3"> Real teamwork</span>
             </div>
         </div>
 
@@ -56,34 +56,42 @@
 
                     <div class="p-3 rounded-3 border bg-light mb-3">
                         <div class="d-flex justify-content-between">
-                            <div class="fw-semibold">Proiect: Website Portofoliu</div>
+                            <div class="fw-semibold">Project: Portfolio Website</div>
                             <span class="badge progres">In progress</span>
                         </div>
-                        <div class="text-secondary small mt-1">3 task-uri active • 1 deadline in 2 zile</div>
+                        <div class="text-secondary small mt-1">
+                            3 active tasks • 1 deadline in 2 days
+                        </div>
                     </div>
 
                     <div class="p-3 rounded-3 border mb-2">
                         <div class="d-flex justify-content-between">
-                            <div class="fw-semibold">Task: Design homepage</div>
+                            <div class="fw-semibold">Task: Homepage design</div>
                             <span class="badge progres">In Progress</span>
                         </div>
-                        <div class="text-secondary small mt-1">Assigned to: you • Due: Friday</div>
+                        <div class="text-secondary small mt-1">
+                            Assigned to you • Due: Friday
+                        </div>
                     </div>
 
                     <div class="p-3 rounded-3 border mb-2">
                         <div class="d-flex justify-content-between">
-                            <div class="fw-semibold">Task: Setare roluri</div>
+                            <div class="fw-semibold">Task: Role setup</div>
                             <span class="badge static">Not Started</span>
                         </div>
-                        <div class="text-secondary small mt-1">Assigned to: teammate • Due: Monday</div>
+                        <div class="text-secondary small mt-1">
+                            Assigned to teammate • Due: Monday
+                        </div>
                     </div>
 
                     <div class="p-3 rounded-3 border">
                         <div class="d-flex justify-content-between">
-                            <div class="fw-semibold">Task: Finalizare migratii</div>
+                            <div class="fw-semibold">Task: Migration finalization</div>
                             <span class="badge bine">Completed</span>
                         </div>
-                        <div class="text-secondary small mt-1">Done today</div>
+                        <div class="text-secondary small mt-1">
+                            Done today
+                        </div>
                     </div>
                 </div>
             </div>
@@ -96,9 +104,9 @@
             <div class="card h-100 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
                     <div class="fs-4 mb-2">👥</div>
-                    <h5 class="fw-bold">Proiecte & echipa</h5>
+                    <h5 class="fw-bold">Projects & team</h5>
                     <p class="text-secondary mb-0">
-                        Creezi proiecte, devii organizator automat si gestionezi membrii echipei.
+                        Create projects, automatically become the organizer, and manage team members.
                     </p>
                 </div>
             </div>
@@ -108,9 +116,10 @@
             <div class="card h-100 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
                     <div class="fs-4 mb-2">📈</div>
-                    <h5 class="fw-bold">Task-uri & status</h5>
+                    <h5 class="fw-bold">Tasks & status</h5>
                     <p class="text-secondary mb-0">
-                        Task-uri cu start/end, statusuri (Not Started / In Progress / Completed) si media.
+                        Tasks with start/end dates, statuses (Not Started / In Progress / Completed),
+                        and media attachments.
                     </p>
                 </div>
             </div>
@@ -120,9 +129,9 @@
             <div class="card h-100 border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
                     <div class="fs-4 mb-2">✨</div>
-                    <h5 class="fw-bold">Rezumat AI</h5>
+                    <h5 class="fw-bold">AI summary</h5>
                     <p class="text-secondary mb-0">
-                        Pe fiecare proiect poti genera un rezumat al progresului si deadline-urilor.
+                        For each project, you can generate an AI summary of progress and deadlines.
                     </p>
                 </div>
             </div>
@@ -132,9 +141,25 @@
     <!-- HOW IT WORKS -->
     <div class="row align-items-center g-4">
         <div class="col-lg-6">
-            <h2 class="fw-bold mb-3">Cum functioneaza</h2>
+            <h2 class="fw-bold mb-3">How it works</h2>
             <ul class="list-unstyled">
-                <li class="mb-2"><i class="bi bi-bookmark-heart-fill"></i> Creezi un proiect si devii organizator.</li>
-                <li class="mb-2"><i class="bi bi-bookmark-heart-fill"></i> Inviti membri, apoi creezi si atribui task-uri.</li>
-                <li class="mb-2"><i class="bi bi-bookmark-heart-fill"></i> Echipa actualizeaza statusul si colaboreaza prin comentarii.</li>
-                <li class="mb-2"><i class="bi bi-bookmark-heart-fill"></i> Dashboard-ul iti arata ce e urgent</li>
+                <li class="mb-2">
+                    <i class="bi bi-bookmark-heart-fill"></i>
+                    Create a project and become the organizer.
+                </li>
+                <li class="mb-2">
+                    <i class="bi bi-bookmark-heart-fill"></i>
+                    Invite members, then create and assign tasks.
+                </li>
+                <li class="mb-2">
+                    <i class="bi bi-bookmark-heart-fill"></i>
+                    The team updates task statuses and collaborates through comments.
+                </li>
+                <li class="mb-2">
+                    <i class="bi bi-bookmark-heart-fill"></i>
+                    Your dashboard shows what’s urgent and what needs attention.
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>

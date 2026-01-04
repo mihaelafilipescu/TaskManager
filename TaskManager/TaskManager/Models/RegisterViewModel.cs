@@ -10,6 +10,12 @@ namespace TaskManager.Models
     // CONTINE DOAR DATE, NU logica, NU acces la baza de date.
     public class RegisterViewModel
     {
+        [Required]
+        [StringLength(30, MinimumLength = 3)]
+        [RegularExpression(@"^[a-zA-Z0-9._-]+$", ErrorMessage = "Username can contain only letters, numbers, dot, underscore and dash.")]
+        [Display(Name = "Username")]
+        public string UserName { get; set; } = "";
+
         // [Required] inseamna ca acest camp este OBLIGATORIU.
         // Daca utilizatorul nu completeaza FullName,
         // formularul nu se trimite si apare mesaj de eroare.

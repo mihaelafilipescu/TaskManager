@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using TaskManager.Data;
 using TaskManager.Models;
 using TaskManager.ViewModels.Projects;
@@ -50,8 +51,25 @@ namespace TaskManager.Controllers
             _db.Projects.Add(project);
             await _db.SaveChangesAsync();
 
-            // până facem /Projects/My în Task 3, trimitem user-ul pe Home
-            return RedirectToAction("Index", "Home");
+            // acum că avem My(), redirect acolo:
+            return RedirectToAction(nameof(My));
+        }
+
+        // GET: /Projects/My
+        [HttpGet]
+        public async Task<IActionResult> My()
+        {
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Challenge();
+
+            var projects = await _db.Projects
+                .AsNoTracking()
+                .Where(p => p.OrganizerId == userId)
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync();
+
+            return View(projects);
         }
     }
 }

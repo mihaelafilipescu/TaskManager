@@ -1,40 +1,112 @@
 ﻿@model TaskManager.Models.RegisterViewModel
 <!-- Spunem ca acest View foloseste RegisterViewModel -->
+@{
+    ViewData["Title"] = "Register";
+}
 
-<h2>Register</h2>
+<div class="container py-5">
+    <!-- Centerăm conținutul ca să arate curat pe desktop -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-6">
 
-<form asp-action="Register" method="post">
-    <!-- Afiseaza toate erorile de validare -->
-    <div asp-validation-summary="All"></div>
+            <!-- Titlu + descriere (stil similar cu homepage) -->
+            <span class="badge text-bg-light border mb-3">Account</span>
+            <h1 class="display-6 fw-bold mb-2">Create your account</h1>
+            <p class="text-secondary mb-4">
+                Fill in your details to start creating projects and managing tasks.
+            </p>
 
-    <!-- Camp pentru FullName -->
-    <div>
-        <label asp-for="FullName"></label>
-        <input asp-for="FullName" />
-        <span asp-validation-for="FullName"></span>
+            <!-- Card cu shadow + colțuri rotunjite, ca pe homepage -->
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+
+                    <form asp-action="Register" method="post">
+                        <!-- Token anti-CSRF (bun practice pentru formulare) -->
+                        @Html.AntiForgeryToken()
+
+                        <!-- Afiseaza toate erorile de validare -->
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <!-- Camp pentru FullName -->
+                        <div class="mb-3">
+                            <label asp-for="FullName" class="form-label fw-semibold"></label>
+                            <input asp-for="FullName"
+                                   class="form-control form-control-lg"
+                                   autocomplete="name"
+                                   placeholder="e.g., Alex Johnson" />
+                            <span asp-validation-for="FullName" class="text-danger"></span>
+                        </div>
+
+                        <!-- Camp pentru Username -->
+                        <div class="mb-3">
+                            <label asp-for="UserName" class="form-label fw-semibold"></label>
+                            <input asp-for="UserName"
+                                   class="form-control form-control-lg"
+                                   autocomplete="username"
+                                   placeholder="e.g., alex.j" />
+                            <span asp-validation-for="UserName" class="text-danger"></span>
+                        </div>
+
+                        <!-- Camp pentru Email -->
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-semibold"></label>
+                            <input asp-for="Email"
+                                   class="form-control form-control-lg"
+                                   autocomplete="email"
+                                   placeholder="name@example.com" />
+                            <span asp-validation-for="Email" class="text-danger"></span>
+                        </div>
+
+                        <!-- Camp pentru Password -->
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <!-- Input type e setat automat corect din ViewModel (DataType/Password) -->
+                            <input asp-for="Password"
+                                   class="form-control form-control-lg"
+                                   autocomplete="new-password"
+                                   placeholder="Create a password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <!-- Camp pentru ConfirmPassword -->
+                        <div class="mb-4">
+                            <label asp-for="ConfirmPassword" class="form-label fw-semibold"></label>
+                            <input asp-for="ConfirmPassword"
+                                   class="form-control form-control-lg"
+                                   autocomplete="new-password"
+                                   placeholder="Repeat password" />
+                            <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                        </div>
+
+                        <!-- Butoane: primary + secondary, ca pe homepage -->
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-person-plus"></i> Create account
+                            </button>
+
+                            <!-- Link către login, ca să fie user flow complet -->
+                            <a class="btn btn-outline-secondary btn-lg"
+                               asp-controller="Account"
+                               asp-action="Login">
+                                <i class="bi bi-box-arrow-in-right"></i> I already have an account
+                            </a>
+                        </div>
+
+                        <!-- Mic text informativ (similar cu bullet points de pe homepage) -->
+                        <div class="mt-4 small text-secondary">
+                            <i class="bi bi-shield-check"></i>
+                            Your information is stored securely.
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
     </div>
+</div>
 
-    <!-- Camp pentru Email -->
-    <div>
-        <label asp-for="Email"></label>
-        <input asp-for="Email" />
-        <span asp-validation-for="Email"></span>
-    </div>
-
-    <!-- Camp pentru Password -->
-    <div>
-        <label asp-for="Password"></label>
-        <input asp-for="Password" />
-        <span asp-validation-for="Password"></span>
-    </div>
-
-    <!-- Camp pentru ConfirmPassword -->
-    <div>
-        <label asp-for="ConfirmPassword"></label>
-        <input asp-for="ConfirmPassword" />
-        <span asp-validation-for="ConfirmPassword"></span>
-    </div>
-
-    <!-- Buton de submit -->
-    <button type="submit">Create account</button>
-</form>
+@section Scripts {
+    <!-- Scripturile pentru validarea client-side (mesaje instant în UI) -->
+    <partial name="_ValidationScriptsPartial" />
+}

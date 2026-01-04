@@ -47,11 +47,28 @@ namespace TaskManager.Controllers
             if (!ModelState.IsValid)
                 return View(model);
 
+            // Verificăm dacă username-ul este deja folosit
+            var existingUserByUsername = await _userManager.FindByNameAsync(model.UserName);
+            if (existingUserByUsername != null)
+            {
+                // Mesaj de eroare legat direct de câmpul UserName
+                ModelState.AddModelError(nameof(model.UserName), "This username is already taken.");
+                return View(model);
+            }
+
+            // Verificăm și email-ul
+            var existingUserByEmail = await _userManager.FindByEmailAsync(model.Email);
+            if (existingUserByEmail != null)
+            {
+                ModelState.AddModelError(nameof(model.Email), "An account with this email already exists.");
+                return View(model);
+            }
+
             // Cream userul nostru custom (ApplicationUser)
             var user = new ApplicationUser
             {
                 // Identity cere UserName
-                UserName = model.Email,
+                UserName = model.UserName,
 
                 // Email-ul utilizatorului
                 Email = model.Email,
@@ -124,35 +141,36 @@ namespace TaskManager.Controllers
 
         // POST /Account/Login
         [HttpPost]
-        [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(LoginViewModel model, string? returnUrl = null)
+        public async Task<IActionResult> Login(LoginViewModel model)
         {
-            // imi salvez returnUrl ca sa-l pot trimite inapoi in view daca am erori
-            ViewData["ReturnUrl"] = returnUrl;
-
             if (!ModelState.IsValid)
                 return View(model);
 
-            // incerc login cu email + parola
-            var result = await _signInManager.PasswordSignInAsync(
-                model.Email,
-                model.Password,
-                model.RememberMe,
-                lockoutOnFailure: false);
+            var input = model.Login.Trim();
 
-            if (!result.Succeeded)
+            // 1) Cautam user fie dupa username, fie dupa email
+            var user = await _userManager.FindByNameAsync(input);
+            if (user == null)
             {
-                ModelState.AddModelError("", "Login invalid.");
+                user = await _userManager.FindByEmailAsync(input);
+            }
+
+            if (user == null)
+            {
+                ModelState.AddModelError("", "Invalid login attempt.");
                 return View(model);
             }
 
-            // daca am returnUrl, ma intorc acolo
-            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
+            // 2) Incercam logarea cu username-ul real (cel din DB)
+            var result = await _signInManager.PasswordSignInAsync(
+                user.UserName!, model.Password, model.RememberMe, lockoutOnFailure: false);
 
-            // altfel ma duc pe Home
-            return RedirectToAction("Index", "Home");
+            if (result.Succeeded)
+                return RedirectToAction("Index", "Home");
+
+            ModelState.AddModelError("", "Invalid login attempt.");
+            return View(model);
         }
 
     }
