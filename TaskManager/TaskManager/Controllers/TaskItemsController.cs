@@ -23,7 +23,7 @@ namespace TaskManager.Controllers
 
         // GET: /Projects/{projectId}/TaskItems
         [HttpGet("")]
-        //folosim Sysytem.Threading.Tasks.Task pentru a evita ambiguitatea cu Taskurile noastre
+        // folosim System.Threading.Tasks.Task pentru a evita ambiguitatea cu Taskurile noastre
         public async System.Threading.Tasks.Task<IActionResult> Index(int projectId)
         {
             var project = await _db.Projects
@@ -57,6 +57,7 @@ namespace TaskManager.Controllers
                 StartDate = today,
                 EndDate = today.AddDays(1)
             };
+
             return View(model);
         }
 
@@ -65,33 +66,25 @@ namespace TaskManager.Controllers
         [ValidateAntiForgeryToken]
         public async System.Threading.Tasks.Task<IActionResult> Create(int projectId, TaskItem model)
         {
-
             if (!await CanManageTasks(projectId))
                 return Forbid();
 
             model.ProjectId = projectId;
             model.CreatedById = _userManager.GetUserId(User)!;
+
+            // ✅ normalizează la date calendaristice (fără oră)
             model.StartDate = model.StartDate.Date;
             model.EndDate = model.EndDate.Date;
 
+            // ✅ regula logică
+            if (model.EndDate <= model.StartDate)
+                ModelState.AddModelError(nameof(model.EndDate), "Data de finalizare trebuie să fie după data de început.");
 
             if (!ModelState.IsValid)
                 return View(model);
 
             _db.TaskItems.Add(model);
             await _db.SaveChangesAsync();
-
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState
-                    .Where(x => x.Value?.Errors.Count > 0)
-                    .Select(x => $"{x.Key}: {string.Join(" | ", x.Value!.Errors.Select(e => e.ErrorMessage))}")
-                    .ToList();
-
-                ViewBag.Errors = errors;
-                return View(model);
-            }
-
 
             return RedirectToAction(nameof(Index), new { projectId });
         }
@@ -107,7 +100,6 @@ namespace TaskManager.Controllers
                 .FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Id == id);
 
             if (task == null) return NotFound();
-
 
             return View(task);
         }
@@ -127,14 +119,25 @@ namespace TaskManager.Controllers
 
             if (task == null) return NotFound();
 
+            // ✅ normalizează la date calendaristice (fără oră)
+            model.StartDate = model.StartDate.Date;
+            model.EndDate = model.EndDate.Date;
+
+            // ✅ regula logică
+            if (model.EndDate <= model.StartDate)
+                ModelState.AddModelError(nameof(model.EndDate), "Data de finalizare trebuie să fie după data de început.");
+
             if (!ModelState.IsValid)
                 return View(model);
 
             task.Title = model.Title;
             task.Description = model.Description;
             task.Status = model.Status;
+
+            // ✅ salvează tot fără oră
             task.StartDate = model.StartDate;
             task.EndDate = model.EndDate;
+
             task.MediaType = model.MediaType;
             task.MediaContent = model.MediaContent;
 

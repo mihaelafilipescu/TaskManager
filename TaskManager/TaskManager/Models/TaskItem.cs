@@ -5,7 +5,14 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace TaskManager.Models
 {
-    public enum TaskStatus { NotStarted, InProgress, Completed }
+    public enum TaskStatus {
+        [Display(Name = "Not Started")]
+        NotStarted,
+        [Display(Name = "In Progress")]
+        InProgress,
+        [Display(Name = "Completed")]
+        Completed 
+    }
     public enum MediaType { Text, Image, Video }
 
     public class TaskItem : IValidatableObject
@@ -17,19 +24,19 @@ namespace TaskManager.Models
         [BindNever, ValidateNever]
         public Project Project { get; set; } = default!;
 
-        [Required, StringLength(200)]
+        [Required(ErrorMessage = "This is a required field."), StringLength(200)]
         public string Title { get; set; } = default!;
 
-        [Required, StringLength(2000)]
+        [Required(ErrorMessage = "This is a required field."), StringLength(2000)]
         public string Description { get; set; } = default!;
 
-        [Required]
+        [Required(ErrorMessage = "This is a required field.")]
         public TaskStatus Status { get; set; } = TaskStatus.NotStarted;
 
-        [Required]
+        [Required(ErrorMessage = "This is a required field.")]
         public DateTime StartDate { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "This is a required field.")]
         public DateTime EndDate { get; set; }
 
         [Required]

@@ -1,20 +1,69 @@
-﻿@model TaskManager.Models.TaskItem
+﻿@model TaskItem
+
 @{
     ViewData["Title"] = "Create Task";
 }
 
 <h2>Create Task</h2>
 
-<form action="/Projects/@Model.ProjectId/TaskItems/Create" method="post">
-    @Html.AntiForgeryToken()
+<form asp-action="Create" method="post">
 
-    <input type="hidden" asp-for="ProjectId" />
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <partial name="_Form" model="Model" />
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
+    </div>
 
-    <button class="btn btn-primary" type="submit">Save</button>
-    <a class="btn btn-secondary"
-       href="/Projects/@Model.ProjectId/TaskItems">Back</a>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="Status" class="form-label"></label>
+        <select asp-for="Status" class="form-select"
+                asp-items="Html.GetEnumSelectList<TaskManager.Models.TaskStatus>()">
+        </select>
+        <span asp-validation-for="Status" class="text-danger"></span>
+    </div>
+
+
+    <div class="mb-3">
+        <label asp-for="StartDate" class="form-label"></label>
+        <input asp-for="StartDate" type="date" class="form-control" />
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="EndDate" class="form-label"></label>
+        <input asp-for="EndDate" type="date" class="form-control" />
+        <span asp-validation-for="EndDate" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="MediaType" class="form-label"></label>
+        <select asp-for="MediaType" class="form-select"
+                asp-items="Html.GetEnumSelectList<TaskManager.Models.MediaType>()">
+        </select>
+        <span asp-validation-for="MediaType" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="MediaContent" class="form-label"></label>
+        <textarea asp-for="MediaContent" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="MediaContent" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a asp-action="Index"
+       asp-controller="TaskItems"
+       asp-route-projectId="@Model.ProjectId"
+       class="btn btn-secondary">
+        Cancel
+    </a>
 </form>
 
 @section Scripts {
