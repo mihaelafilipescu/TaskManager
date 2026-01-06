@@ -90,31 +90,47 @@ namespace TaskManager.Controllers
         [HttpGet]
         public async Task<IActionResult> Details(int id)
         {
-            // Aici iau userId ca sa stiu daca userul are voie sa vada proiectul (organizer sau membru)
+            // Aici iau id-ul userului logat
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrWhiteSpace(userId))
                 return Challenge();
 
-            // Aici iau proiectul + verific ca userul e organizer sau membru, altfel nu are ce cauta aici
+            // Aici iau proiectul din baza de date
+            // Incarc si membrii + task-urile ca sa le pot afisa in view
             var project = await _db.Projects
                 .AsNoTracking()
+                // Aici iau membrii + userul din spatele fiecarui membru, ca sa am UserName/Email
                 .Include(p => p.Members)
+                    .ThenInclude(pm => pm.User)
+                .Include(p => p.TaskItems)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
+            // Daca proiectul nu exista
             if (project == null)
                 return NotFound();
 
-            // Aici ma asigur ca un proiect "sters" (IsActive=false) nu mai poate fi accesat nici din URL
+            // Daca proiectul e soft-deleted, nu trebuie sa poata fi accesat
             if (!project.IsActive)
                 return NotFound();
 
+            // Verific daca userul este organizer
             var isOrganizer = project.OrganizerId == userId;
-            var isMember = project.Members.Any(pm => pm.UserId == userId);
 
-            // Aici blochez accesul daca userul nu e nici organizer, nici membru, nici admin
+            // Verific daca userul este membru in proiect
+            var isMember = project.Members.Any(m => m.UserId == userId);
+
+            // Daca nu e organizer, nu e membru si nu e admin => acces interzis
             if (!isOrganizer && !isMember && !User.IsInRole("Admin"))
                 return Forbid();
 
+            // Aici iau userul organizer ca sa pot afisa UserName/Email, nu doar OrganizerId (GUID)
+            var organizerUser = await _userManager.FindByIdAsync(project.OrganizerId);
+
+            // Aici aleg ce afisez: username, daca nu exista atunci email, daca nici ala nu exista raman pe id
+            ViewBag.OrganizerName = organizerUser?.UserName ?? organizerUser?.Email ?? project.OrganizerId;
+
+
+            // Trimit proiectul catre view
             return View(project);
         }
 
