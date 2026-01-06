@@ -1,0 +1,258 @@
+﻿@model TaskManager.ViewModels.Dashboard.DashboardIndexViewModel
+@using System.Linq
+@using TaskItemStatus = TaskManager.Models.TaskStatus
+
+@{
+    ViewData["Title"] = "Dashboard";
+
+    string StatusLabel(TaskItemStatus s) => s switch
+    {
+        TaskItemStatus.NotStarted => "Not Started",
+        TaskItemStatus.InProgress => "In Progress",
+        TaskItemStatus.Completed => "Completed",
+        _ => s.ToString()
+    };
+
+    string StatusBadge(TaskItemStatus s) => s switch
+    {
+        TaskItemStatus.NotStarted => "static",     // albastru inchis
+        TaskItemStatus.InProgress => "progres",    // roz
+        TaskItemStatus.Completed => "functional",  // verde viu
+        _ => "static"
+    };
+
+    // Aici aleg un default local ca sa nu avem null in input
+    var dueDays = (Model.Filters.DueInDays.HasValue && Model.Filters.DueInDays.Value > 0)
+        ? Model.Filters.DueInDays.Value
+        : 7;
+
+    // Aici transform DaysUntilDue intr-un text clar pentru user
+    string TimeLeftLabel(int days)
+    {
+        if (days < 0)
+            return $"Overdue by {System.Math.Abs(days)} day(s)";
+        if (days == 0)
+            return "Due today";
+        if (days == 1)
+            return "Due tomorrow";
+        return $"Due in {days} day(s)";
+    }
+
+    // Aici aleg culoarea casutei in functie de cat de urgent e
+    string TimeLeftBadge(int days)
+    {
+        // Aici folosesc clasele mele globale de stare, ca sa am aceeasi paleta peste tot
+        if (days < 0) return "alerta";
+        if (days <= 2) return "warning";
+        return "functional";
+    }
+}
+
+<div class="container py-4">
+    <h1 class="h3 mb-3">Dashboard</h1>
+
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-md-4">
+            <select name="projectId" class="form-select">
+                <option value="">All projects</option>
+
+                @foreach (var p in Model.Projects)
+                {
+                    if (Model.Filters.ProjectId == p.Id)
+                    {
+                        <option value="@p.Id" selected>@p.Title</option>
+                    }
+                    else
+                    {
+                        <option value="@p.Id">@p.Title</option>
+                    }
+                }
+            </select>
+        </div>
+
+        <div class="col-md-3">
+            <select name="status" class="form-select">
+                @if (Model.Filters.Status == null)
+                {
+                    <option value="" selected>All statuses</option>
+                }
+                else
+                {
+                    <option value="">All statuses</option>
+                }
+
+                @if (Model.Filters.Status == TaskItemStatus.NotStarted)
+                {
+                    <option value="NotStarted" selected>Not Started</option>
+                }
+                else
+                {
+                    <option value="NotStarted">Not Started</option>
+                }
+
+                @if (Model.Filters.Status == TaskItemStatus.InProgress)
+                {
+                    <option value="InProgress" selected>In Progress</option>
+                }
+                else
+                {
+                    <option value="InProgress">In Progress</option>
+                }
+
+                @if (Model.Filters.Status == TaskItemStatus.Completed)
+                {
+                    <option value="Completed" selected>Completed</option>
+                }
+                else
+                {
+                    <option value="Completed">Completed</option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-4 d-flex align-items-center">
+            @if (Model.Filters.DueSoonOnly)
+            {
+                <input type="checkbox"
+                       class="form-check-input me-2"
+                       name="dueSoonOnly"
+                       value="true"
+                       checked />
+            }
+            else
+            {
+                <input type="checkbox"
+                       class="form-check-input me-2"
+                       name="dueSoonOnly"
+                       value="true" />
+            }
+
+            <label class="form-check-label me-2">
+                Show tasks due in the next
+            </label>
+
+            <input type="number"
+                   class="form-control form-control-sm me-2"
+                   name="dueInDays"
+                   min="1"
+                   style="width: 80px;"
+                   value="@dueDays" />
+
+            <span class="text-muted">days</span>
+        </div>
+
+        <div class="col-md-1">
+            <button class="btn btn-primary w-100">Apply</button>
+        </div>
+    </form>
+
+    <h2 class="h5">Upcoming deadlines</h2>
+
+    @if (!Model.UpcomingDeadlines.Any())
+    {
+        <p class="text-muted">No upcoming deadlines.</p>
+    }
+    else
+    {
+        <div class="table-responsive mb-4">
+            <table class="table table-sm align-middle">
+                <thead>
+                    <tr>
+                        <th>Task</th>
+                        <th>Project</th>
+                        <th>Due</th>
+                        <th>Time left</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var t in Model.UpcomingDeadlines)
+                    {
+                        <tr>
+                            <td>
+                                <a asp-controller="TaskItems"
+                                   asp-action="Details"
+                                   asp-route-projectId="@t.ProjectId"
+                                   asp-route-id="@t.Id">
+                                    @t.Title
+                                </a>
+
+                                @if (t.IsAssignedToMe)
+                                {
+                                    <span class="badge warning ms-2">Assigned to me</span>
+                                }
+                            </td>
+
+                            <td class="text-muted">@t.ProjectTitle</td>
+                            <td>@t.EndDate.ToString("yyyy-MM-dd")</td>
+                            <td>
+                                <span class="badge @TimeLeftBadge(t.DaysUntilDue)">
+                                    @TimeLeftLabel(t.DaysUntilDue)
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge @StatusBadge(t.Status)">
+                                    @StatusLabel(t.Status)
+                                </span>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+
+    <h2 class="h5">Tasks by status</h2>
+
+    @foreach (var st in new[] { TaskItemStatus.NotStarted, TaskItemStatus.InProgress, TaskItemStatus.Completed })
+    {
+        Model.TasksByStatus.TryGetValue(st, out var list);
+        list ??= new();
+
+        <h3 class="h6 mt-3">@StatusLabel(st) (@list.Count)</h3>
+
+        @if (!list.Any())
+        {
+            <p class="text-muted">No tasks.</p>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table table-sm align-middle">
+                    <thead>
+                        <tr>
+                            <th>Task</th>
+                            <th>Project</th>
+                            <th>Start</th>
+                            <th>Due</th>
+                            <th>Time left</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var t in list.OrderBy(x => x.EndDate))
+                        {
+                            <tr>
+                                <td>
+                                    <a asp-controller="TaskItems"
+                                       asp-action="Details"
+                                       asp-route-projectId="@t.ProjectId"
+                                       asp-route-id="@t.Id">
+                                        @t.Title
+                                    </a>
+                                </td>
+                                <td class="text-muted">@t.ProjectTitle</td>
+                                <td>@t.StartDate.ToString("yyyy-MM-dd")</td>
+                                <td>@t.EndDate.ToString("yyyy-MM-dd")</td>
+                                <td>
+                                    <span class="badge @TimeLeftBadge(t.DaysUntilDue)">
+                                        @TimeLeftLabel(t.DaysUntilDue)
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    }
+</div>

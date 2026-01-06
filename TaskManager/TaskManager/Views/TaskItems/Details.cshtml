@@ -9,6 +9,10 @@
         return commentUserId == Model.CurrentUserId || User.IsInRole("Admin");
     }
 }
+@{
+    Layout = "_Layout";
+}
+
 
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
@@ -113,9 +117,9 @@
                                         asp-items="Html.GetEnumSelectList<TaskManager.Models.TaskStatus>()"></select>
                             </div>
 
-                            <button type="submit" class="btn btn-outline-success">
-                                Update status
-                            </button>
+                            <button type="submit" class="btn functional">Update status</button>
+
+
                         </form>
                     </div>
                 </div>
