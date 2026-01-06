@@ -42,7 +42,13 @@
         @foreach (var t in Model)
         {
             <tr>
-                <td>@t.Title</td>
+                <td>
+                    @* SINGURA MODIFICARE: titlul devine link spre pagina Details *@
+                    <a href="@Url.Action("Details", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">
+                        @t.Title
+                    </a>
+                </td>
+
                 <td>@t.Status</td>
                 <td>@t.StartDate.ToString("dd MMM yyyy")</td>
                 <td>@t.EndDate.ToString("dd MMM yyyy")</td>
@@ -96,7 +102,7 @@
     </tbody>
 </table>
 
-@*  un mesaj mic pentru membrii care au doar view, ca sa inteleaga de ce nu au butoane *@
+@* un mesaj mic pentru membrii care au doar view *@
 @if (!canModify)
 {
     <div class="text-muted" style="font-size: 13px;">

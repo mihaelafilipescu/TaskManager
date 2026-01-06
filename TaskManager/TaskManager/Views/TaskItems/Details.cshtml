@@ -1,0 +1,138 @@
+﻿@model TaskManager.ViewModels.TaskItems.TaskDetailsViewModel
+
+@{
+    ViewData["Title"] = "Task details";
+    var t = Model.Task;
+
+    // Functie mica pentru UI: imi arata daca userul poate edita/sterge un comentariu.
+    bool canModifyOwnComment(string commentUserId)
+    {
+        return commentUserId == Model.CurrentUserId || User.IsInRole("Admin");
+    }
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h2 class="mb-1">Task details</h2>
+        <div class="text-muted">Project ID: @t.ProjectId</div>
+    </div>
+
+    <a class="btn btn-outline-secondary"
+       href="@Url.Action("Index", "TaskItems", new { projectId = t.ProjectId })">
+        Back to tasks
+    </a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h4 class="card-title">@t.Title</h4>
+        <p class="card-text">@t.Description</p>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div><strong>Status:</strong> @t.Status</div>
+            </div>
+            <div class="col-md-4">
+                <div><strong>Start:</strong> @t.StartDate.ToString("dd MMM yyyy")</div>
+            </div>
+            <div class="col-md-4">
+                <div><strong>End:</strong> @t.EndDate.ToString("dd MMM yyyy")</div>
+            </div>
+        </div>
+
+        <hr />
+
+        <div>
+            <strong>Media</strong>
+            <div class="mt-2">
+                @* Aici afisez diferit media in functie de tip *@
+                @if (t.MediaType == TaskManager.Models.MediaType.Image)
+                {
+                    <a href="@t.MediaContent" target="_blank" title="Open image">
+                        <img src="@t.MediaContent"
+                             alt="task image"
+                             style="max-width:420px;height:auto;border:1px solid #ddd;border-radius:12px;padding:8px;" />
+                    </a>
+                    <div class="text-muted" style="font-size: 12px;">Click image to open full</div>
+                }
+                else if (t.MediaType == TaskManager.Models.MediaType.Video)
+                {
+                    <a class="btn btn-sm btn-outline-primary" href="@t.MediaContent" target="_blank">
+                        Open video
+                    </a>
+                    <div class="text-muted" style="font-size: 12px;">Saved as URL</div>
+                }
+                else
+                {
+                    <div class="text-muted">@t.MediaContent</div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <strong>Comments</strong>
+    </div>
+    <div class="card-body">
+
+        @* Form-ul de add comment. Il trimit la CommentsController.Create *@
+        <form asp-controller="Comments" asp-action="Create" method="post" class="mb-4">
+            @Html.AntiForgeryToken()
+
+            <input type="hidden" name="TaskId" value="@t.Id" />
+
+            <div class="mb-2">
+                <label class="form-label">Add a comment</label>
+                <textarea class="form-control" name="Text" rows="3" placeholder="Write your comment here..."></textarea>
+                <div class="form-text">Comment text cannot be empty.</div>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Post comment</button>
+        </form>
+
+        @* Afisez comentariile cronologic (sortate in controller) *@
+        @if (Model.Comments.Count == 0)
+        {
+            <div class="text-muted">No comments yet.</div>
+        }
+        else
+        {
+            foreach (var c in Model.Comments)
+            {
+                <div class="border rounded p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <strong>@(c.User?.Email ?? "Unknown")</strong>
+                            <div class="text-muted" style="font-size: 12px;">
+                                Posted: @c.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")
+                                @if (c.UpdatedAt != null)
+                                {
+                                    <span> · Edited</span>
+                                }
+                            </div>
+                        </div>
+
+                        @* Arat Edit/Delete doar daca e autorul sau Admin *@
+                        @if (canModifyOwnComment(c.UserId))
+                        {
+                            <div>
+                                <a class="btn btn-sm btn-outline-secondary"
+                                   href="@Url.Action("Edit", "Comments", new { id = c.Id })">
+                                    Edit
+                                </a>
+                                <a class="btn btn-sm btn-outline-danger"
+                                   href="@Url.Action("Delete", "Comments", new { id = c.Id })">
+                                    Delete
+                                </a>
+                            </div>
+                        }
+                    </div>
+
+                    <div class="mt-2">@c.Text</div>
+                </div>
+            }
+        }
+    </div>
+</div>

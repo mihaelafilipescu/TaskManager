@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskManager.Data;
 using TaskManager.Models;
 using TaskManager.ViewModels.TaskItems;
+using TaskManager.ViewModels.Comments;
 
 namespace TaskManager.Controllers
 {
@@ -15,22 +16,26 @@ namespace TaskManager.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IWebHostEnvironment _env;
 
-        public TaskItemsController(ApplicationDbContext db, UserManager<ApplicationUser> userManager, IWebHostEnvironment env)
+        public TaskItemsController(
+            ApplicationDbContext db,
+            UserManager<ApplicationUser> userManager,
+            IWebHostEnvironment env)
         {
             _db = db;
             _userManager = userManager;
             _env = env;
         }
 
+        // LISTA DE TASK-URI DINTR-UN PROIECT
         // GET: /TaskItems?projectId=1
         [HttpGet]
         public async System.Threading.Tasks.Task<IActionResult> Index(int projectId)
         {
-            // Aici verific doar dreptul de VIEW (member are voie sa vada)
+            // Verific ca userul are voie sa vada task-urile proiectului
             if (!await CanViewTasks(projectId))
                 return Forbid();
 
-            // Aici iau proiectul ca sa-l afisez sus in pagina
+            // Iau proiectul ca sa-l afisez in view (titlu etc.)
             var project = await _db.Projects
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == projectId);
@@ -40,24 +45,69 @@ namespace TaskManager.Controllers
 
             ViewBag.Project = project;
 
-            // Aici iau task-urile din proiect
+            // Iau toate task-urile din proiect
             var tasks = await _db.TaskItems
                 .AsNoTracking()
                 .Where(t => t.ProjectId == projectId)
                 .OrderByDescending(t => t.Id)
                 .ToListAsync();
 
-            // Aici trimit si un flag in view ca sa stie daca afiseaza butoanele (Create/Edit/Delete)
+            // Flag pentru UI: daca apar sau nu butoanele de edit/delete
             ViewBag.CanModify = await CanModifyTasks(projectId);
 
             return View(tasks);
         }
 
+        // PAGINA DE DETALII PENTRU UN TASK (AICI APAR COMENTARIILE)
+        // GET: /TaskItems/Details?projectId=1&id=5
+        [HttpGet]
+        public async System.Threading.Tasks.Task<IActionResult> Details(int projectId, int id)
+        {
+            // Verific dreptul de view
+            if (!await CanViewTasks(projectId))
+                return Forbid();
+
+            // Iau task-ul
+            var task = await _db.TaskItems
+                .AsNoTracking()
+                .Include(t => t.Project)
+                .FirstOrDefaultAsync(t => t.ProjectId == projectId && t.Id == id);
+
+            if (task == null)
+                return NotFound();
+
+            // Iau comentariile active, ordonate cronologic
+            var comments = await _db.Comments
+                .AsNoTracking()
+                .Include(c => c.User)
+                .Where(c => c.TaskId == id && !c.IsDeleted)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync();
+
+            // Pastrez userul curent ca sa stiu in view ce butoane afisez
+            var currentUserId = _userManager.GetUserId(User) ?? string.Empty;
+
+            var vm = new TaskDetailsViewModel
+            {
+                Task = task,
+                Comments = comments,
+                CurrentUserId = currentUserId,
+                NewComment = new CommentFormViewModel
+                {
+                    TaskId = id,
+                    Text = string.Empty
+                }
+            };
+
+            return View(vm);
+        }
+
+        // CREATE TASK - FORM
         // GET: /TaskItems/Create?projectId=1
         [HttpGet]
         public async System.Threading.Tasks.Task<IActionResult> Create(int projectId)
         {
-            // Aici verific dreptul de MODIFY (member nu are voie)
+            // Doar organizer/admin pot crea task-uri
             if (!await CanModifyTasks(projectId))
                 return Forbid();
 
@@ -74,26 +124,25 @@ namespace TaskManager.Controllers
             return View(model);
         }
 
+        // CREATE TASK - SAVE
         // POST: /TaskItems/Create?projectId=1
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async System.Threading.Tasks.Task<IActionResult> Create(int projectId, TaskItemFormViewModel model)
         {
-            // Aici verific dreptul de MODIFY (member nu are voie)
             if (!await CanModifyTasks(projectId))
                 return Forbid();
 
             model.ProjectId = projectId;
 
-            // Aici normalizez datele fara ora
+            // Scot ora din date
             model.StartDate = model.StartDate.Date;
             model.EndDate = model.EndDate.Date;
 
-            // Aici aplic regula logica (end > start) - mesaj in English
+            // Regula logica
             if (model.EndDate <= model.StartDate)
                 ModelState.AddModelError(nameof(model.EndDate), "End date must be after start date.");
 
-            // Aici validez si salvez media (image/video/text)
             await ValidateAndHandleMediaAsync(model, isEdit: false);
 
             if (!ModelState.IsValid)
@@ -119,11 +168,11 @@ namespace TaskManager.Controllers
             return RedirectToAction(nameof(Index), new { projectId });
         }
 
+        // EDIT TASK - FORM
         // GET: /TaskItems/Edit?projectId=1&id=5
         [HttpGet]
         public async System.Threading.Tasks.Task<IActionResult> Edit(int projectId, int id)
         {
-            // Aici verific dreptul de MODIFY (member nu are voie)
             if (!await CanModifyTasks(projectId))
                 return Forbid();
 
@@ -144,9 +193,6 @@ namespace TaskManager.Controllers
                 StartDate = task.StartDate,
                 EndDate = task.EndDate,
                 MediaType = task.MediaType,
-
-                // Aici, daca e imagine, nu bag in MediaContent (ca sa nu se bata cu Text/Video),
-                // tin imaginea in ExistingImagePath si o afisez separat
                 MediaContent = task.MediaType == MediaType.Image ? null : task.MediaContent,
                 ExistingImagePath = task.MediaType == MediaType.Image ? task.MediaContent : null
             };
@@ -154,12 +200,12 @@ namespace TaskManager.Controllers
             return View(model);
         }
 
+        // EDIT TASK - SAVE
         // POST: /TaskItems/Edit?projectId=1&id=5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async System.Threading.Tasks.Task<IActionResult> Edit(int projectId, int id, TaskItemFormViewModel model)
         {
-            // Aici verific dreptul de MODIFY (member nu are voie)
             if (!await CanModifyTasks(projectId))
                 return Forbid();
 
@@ -172,15 +218,12 @@ namespace TaskManager.Controllers
             if (task == null)
                 return NotFound();
 
-            // Aici normalizez datele fara ora
             model.StartDate = model.StartDate.Date;
             model.EndDate = model.EndDate.Date;
 
-            // Aici aplic regula logica - mesaj in English
             if (model.EndDate <= model.StartDate)
                 ModelState.AddModelError(nameof(model.EndDate), "End date must be after start date.");
 
-            // Aici validez + tratez media (la edit pot pastra imaginea veche)
             await ValidateAndHandleMediaAsync(model, isEdit: true);
 
             if (!ModelState.IsValid)
@@ -199,11 +242,11 @@ namespace TaskManager.Controllers
             return RedirectToAction(nameof(Index), new { projectId });
         }
 
+        // DELETE TASK - CONFIRM
         // GET: /TaskItems/Delete?projectId=1&id=5
         [HttpGet]
         public async System.Threading.Tasks.Task<IActionResult> Delete(int projectId, int id)
         {
-            // Aici verific dreptul de MODIFY (member nu are voie)
             if (!await CanModifyTasks(projectId))
                 return Forbid();
 
@@ -217,12 +260,12 @@ namespace TaskManager.Controllers
             return View(task);
         }
 
-        // POST: /TaskItems/Delete?projectId=1&id=5
+        // DELETE TASK - SAVE
+        // POST: /TaskItems/DeleteConfirmed?projectId=1&id=5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async System.Threading.Tasks.Task<IActionResult> DeleteConfirmed(int projectId, int id)
         {
-            // Aici verific dreptul de MODIFY (member nu are voie)
             if (!await CanModifyTasks(projectId))
                 return Forbid();
 
@@ -238,61 +281,47 @@ namespace TaskManager.Controllers
             return RedirectToAction(nameof(Index), new { projectId });
         }
 
+        // VERIFICARE DREPT VIEW (MEMBER / ORGANIZER / ADMIN)
         private async System.Threading.Tasks.Task<bool> CanViewTasks(int projectId)
         {
-            // Aici iau userul logat
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrWhiteSpace(userId))
                 return false;
 
-            // Aici iau proiectul cu membrii, ca sa verific rolul userului in proiect
             var project = await _db.Projects
                 .AsNoTracking()
                 .Include(p => p.Members)
                 .FirstOrDefaultAsync(p => p.Id == projectId);
 
-            if (project == null)
-                return false;
-
-            // Daca proiectul e soft-deleted, nu mai are sens sa-l accesez
-            if (!project.IsActive)
+            if (project == null || !project.IsActive)
                 return false;
 
             var isOrganizer = project.OrganizerId == userId;
             var isMember = project.Members.Any(m => m.UserId == userId);
 
-            // VIEW: organizer / member / admin
             return isOrganizer || isMember || User.IsInRole("Admin");
         }
 
+        // VERIFICARE DREPT MODIFY (ORGANIZER / ADMIN)
         private async System.Threading.Tasks.Task<bool> CanModifyTasks(int projectId)
         {
-            // Aici iau userul logat
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrWhiteSpace(userId))
                 return false;
 
-            // Aici iau proiectul (nu am nevoie de Members pentru modify, imi trebuie doar organizerId)
             var project = await _db.Projects
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == projectId);
 
-            if (project == null)
+            if (project == null || !project.IsActive)
                 return false;
 
-            // Daca proiectul e soft-deleted, nu permit modificari
-            if (!project.IsActive)
-                return false;
-
-            var isOrganizer = project.OrganizerId == userId;
-
-            // MODIFY: doar organizer / admin
-            return isOrganizer || User.IsInRole("Admin");
+            return project.OrganizerId == userId || User.IsInRole("Admin");
         }
 
+        // LOGICA PENTRU MEDIA (TEXT / VIDEO / IMAGE)
         private async System.Threading.Tasks.Task ValidateAndHandleMediaAsync(TaskItemFormViewModel model, bool isEdit)
         {
-            // Text
             if (model.MediaType == MediaType.Text)
             {
                 if (string.IsNullOrWhiteSpace(model.MediaContent))
@@ -301,7 +330,6 @@ namespace TaskManager.Controllers
                 return;
             }
 
-            // Video
             if (model.MediaType == MediaType.Video)
             {
                 if (string.IsNullOrWhiteSpace(model.MediaContent))
@@ -319,20 +347,14 @@ namespace TaskManager.Controllers
                 return;
             }
 
-            // Image
             var hasExisting = !string.IsNullOrWhiteSpace(model.ExistingImagePath);
 
             if (model.ImageFile == null)
             {
-                // La Create trebuie neaparat fisier, la Edit pot pastra imaginea veche
                 if (!isEdit || !hasExisting)
-                {
                     ModelState.AddModelError(nameof(model.ImageFile), "Please upload an image.");
-                }
                 else
-                {
                     model.MediaContent = model.ExistingImagePath;
-                }
 
                 return;
             }
