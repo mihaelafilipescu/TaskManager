@@ -74,6 +74,8 @@ namespace TaskManager.Controllers
 
             var projects = await _db.Projects
                 .AsNoTracking()
+                // Aici afisez doar proiectele active, ca cele sterse (IsActive=false) sa nu mai apara deloc in lista
+                .Where(p => p.IsActive)
                 .Where(p =>
                     p.OrganizerId == userId ||
                     p.Members.Any(pm => pm.UserId == userId)
@@ -84,6 +86,53 @@ namespace TaskManager.Controllers
             return View(projects);
         }
 
+        // GET: /Projects/Details/5
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            // Aici iau id-ul userului logat
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Challenge();
+
+            // Aici iau proiectul din baza de date
+            // Incarc si membrii + task-urile ca sa le pot afisa in view
+            var project = await _db.Projects
+                .AsNoTracking()
+                // Aici iau membrii + userul din spatele fiecarui membru, ca sa am UserName/Email
+                .Include(p => p.Members)
+                    .ThenInclude(pm => pm.User)
+                .Include(p => p.TaskItems)
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            // Daca proiectul nu exista
+            if (project == null)
+                return NotFound();
+
+            // Daca proiectul e soft-deleted, nu trebuie sa poata fi accesat
+            if (!project.IsActive)
+                return NotFound();
+
+            // Verific daca userul este organizer
+            var isOrganizer = project.OrganizerId == userId;
+
+            // Verific daca userul este membru in proiect
+            var isMember = project.Members.Any(m => m.UserId == userId);
+
+            // Daca nu e organizer, nu e membru si nu e admin => acces interzis
+            if (!isOrganizer && !isMember && !User.IsInRole("Admin"))
+                return Forbid();
+
+            // Aici iau userul organizer ca sa pot afisa UserName/Email, nu doar OrganizerId (GUID)
+            var organizerUser = await _userManager.FindByIdAsync(project.OrganizerId);
+
+            // Aici aleg ce afisez: username, daca nu exista atunci email, daca nici ala nu exista raman pe id
+            ViewBag.OrganizerName = organizerUser?.UserName ?? organizerUser?.Email ?? project.OrganizerId;
+
+
+            // Trimit proiectul catre view
+            return View(project);
+        }
 
         // GET: /Projects/Members/5
         [HttpGet]
@@ -98,6 +147,10 @@ namespace TaskManager.Controllers
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             if (project == null)
+                return NotFound();
+
+            // Aici nu mai permit acces la pagina de membri pentru proiectele sterse/inactive
+            if (!project.IsActive)
                 return NotFound();
 
             // Organizatorul vede sigur; membrii vor vedea la Task 5 (validari roluri)
@@ -139,6 +192,10 @@ namespace TaskManager.Controllers
 
             var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == vm.ProjectId);
             if (project == null)
+                return NotFound();
+
+            // Aici nu permit modificari pe un proiect sters/inactiv
+            if (!project.IsActive)
                 return NotFound();
 
             // doar organizatorul poate gestiona membri
@@ -194,6 +251,10 @@ namespace TaskManager.Controllers
             if (project == null)
                 return NotFound();
 
+            // Aici nu permit modificari pe un proiect sters/inactiv
+            if (!project.IsActive)
+                return NotFound();
+
             if (project.OrganizerId != userId)
                 return Forbid();
 
@@ -215,6 +276,74 @@ namespace TaskManager.Controllers
 
             TempData["Success"] = "Member removed successfully.";
             return RedirectToAction(nameof(Members), new { id = projectId });
+        }
+
+        // GET: /Projects/Delete/5
+        [HttpGet]
+        public async Task<IActionResult> Delete(int id)
+        {
+            // Aici pun un log simplu ca sa fiu sigur ca intru in actiunea asta si vad ce id vine din URL
+            Console.WriteLine($">>> ProjectsController.Delete GET called with id={id}");
+
+            // Aici caut proiectul dupa id; daca nu exista, e normal sa dau NotFound
+            var project = await _db.Projects
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            // Aici mai pun un log ca sa vad daca am gasit proiectul sau nu
+            Console.WriteLine($">>> Project found: {(project != null ? project.Title : "NULL")}");
+
+            if (project == null)
+                return NotFound();
+
+            // Aici nu mai permit stergere/confirmare pentru proiectele deja inactive
+            if (!project.IsActive)
+                return NotFound();
+
+            // Aici verific drepturile: Admin sau Organizer
+            if (!await IsAdminOrOrganizerAsync(project))
+                return Forbid();
+
+            // Aici e esential: trimit proiectul ca Model catre view
+            return View(project);
+        }
+
+        // POST: /Projects/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            // Aici iau proiectul real (tracked), ca sa pot modifica IsActive
+            var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id);
+            if (project == null)
+                return NotFound();
+
+            // Aici daca e deja inactiv, nu mai fac nimic (doar ma intorc la lista)
+            if (!project.IsActive)
+                return RedirectToAction(nameof(My));
+
+            // Aici verific iar drepturile, pentru ca POST-ul e actiunea care chiar modifica datele
+            if (!await IsAdminOrOrganizerAsync(project))
+                return Forbid();
+
+            // Aici fac soft delete ca sa evit probleme cu FK (task-uri, membri, comentarii)
+            project.IsActive = false;
+
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = "Project deleted successfully.";
+            return RedirectToAction(nameof(My));
+        }
+
+        private async Task<bool> IsAdminOrOrganizerAsync(Project project)
+        {
+            // Aici iau userId ca sa pot compara daca eu sunt organizerul proiectului
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId))
+                return false;
+
+            // Aici permit stergere daca sunt admin sau daca sunt organizer (creatorul proiectului)
+            return User.IsInRole("Admin") || project.OrganizerId == userId;
         }
     }
 }

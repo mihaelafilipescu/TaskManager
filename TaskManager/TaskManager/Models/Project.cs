@@ -23,7 +23,7 @@
 
         // relatii
         public ICollection<ProjectMember> Members { get; set; } = new List<ProjectMember>();
-        public ICollection<Task> Tasks { get; set; } = new List<Task>();
+        public ICollection<TaskItem> TaskItems { get; set; } = new List<TaskItem>();
         public ICollection<ProjectSummary> Summaries { get; set; } = new List<ProjectSummary>();
     }
 }
