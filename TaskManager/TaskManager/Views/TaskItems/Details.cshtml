@@ -32,11 +32,95 @@
                 <div><strong>Status:</strong> @t.Status</div>
             </div>
             <div class="col-md-4">
+                <div>
+                    <strong>Assignee:</strong>
+                    @if (!string.IsNullOrWhiteSpace(Model.CurrentAssigneeLabel))
+                    {
+                        <span>@Model.CurrentAssigneeLabel</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">Unassigned</span>
+                    }
+                </div>
+            </div>
+            <div class="col-md-4">
                 <div><strong>Start:</strong> @t.StartDate.ToString("dd MMM yyyy")</div>
             </div>
             <div class="col-md-4">
                 <div><strong>End:</strong> @t.EndDate.ToString("dd MMM yyyy")</div>
             </div>
+        </div>
+
+        <hr />
+
+        @* Asignare + status update (cerinta Sprint 3). UI e doar pentru confort, controller-ul valideaza tot. *@
+
+        @if (TempData["AssignError"] != null)
+        {
+            <div class="alert alert-danger py-2">@TempData["AssignError"]</div>
+        }
+
+        <div class="row g-3">
+
+            @* Daca nu e organizer/admin, nu arat deloc zona de Assign *@
+            @if (Model.CanAssign)
+            {
+                <div class="col-lg-6">
+                    <div class="border rounded-3 p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h5 class="mb-0">Assign</h5>
+                        </div>
+
+                        <form asp-action="Assign" asp-controller="TaskItems" method="post" class="mt-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="AssignForm.TaskId" />
+                            <input type="hidden" asp-for="AssignForm.ProjectId" />
+
+                            <div class="mb-2">
+                                <label class="form-label">Assign to member</label>
+                                <select class="form-select"
+                                        asp-for="AssignForm.SelectedUserId"
+                                        asp-items="Model.AssignForm.MemberOptions"></select>
+                            </div>
+
+                            <button type="submit" class="btn btn-outline-primary">
+                                Save assignee
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+
+            @* Daca nu e admin/organizer si nici nu e task-ul lui, nu arat deloc zona de Status *@
+            @if (Model.CanChangeStatus)
+            {
+                <div class="col-lg-6">
+                    <div class="border rounded-3 p-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h5 class="mb-0">Status</h5>
+                        </div>
+
+                        <form asp-action="UpdateStatus" asp-controller="TaskItems" method="post" class="mt-3">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="StatusForm.TaskId" />
+                            <input type="hidden" asp-for="StatusForm.ProjectId" />
+
+                            <div class="mb-2">
+                                <label class="form-label">Change status</label>
+                                <select class="form-select"
+                                        asp-for="StatusForm.NewStatus"
+                                        asp-items="Html.GetEnumSelectList<TaskManager.Models.TaskStatus>()"></select>
+                            </div>
+
+                            <button type="submit" class="btn btn-outline-success">
+                                Update status
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+
         </div>
 
         <hr />
@@ -69,37 +153,15 @@
     </div>
 </div>
 
-<div class="card mb-4">
-    <div class="card-header">
-        <strong>Comments</strong>
-    </div>
+<div class="card">
     <div class="card-body">
+        <h4 class="mb-3">Comments</h4>
 
-        @* Mesaj simplu daca userul a incercat sa posteze gol *@
         @if (TempData["CommentError"] != null)
         {
-            <div class="alert alert-danger">
-                @TempData["CommentError"]
-            </div>
+            <div class="alert alert-danger py-2">@TempData["CommentError"]</div>
         }
 
-        @* Form-ul de add comment. Folosesc asp-for ca sa mearga validarea client-side *@
-        <form asp-controller="Comments" asp-action="Create" method="post" class="mb-4">
-            @Html.AntiForgeryToken()
-
-            <input type="hidden" asp-for="NewComment.TaskId" />
-
-            <div class="mb-2">
-                <label class="form-label" asp-for="NewComment.Text">Add a comment</label>
-                <textarea class="form-control" asp-for="NewComment.Text" rows="3" placeholder="Write your comment here..."></textarea>
-                <span class="text-danger" asp-validation-for="NewComment.Text"></span>
-                <div class="form-text">Comment text cannot be empty.</div>
-            </div>
-
-            <button type="submit" class="btn btn-primary">Post comment</button>
-        </form>
-
-        @* Comentariile sunt deja sortate cronologic in controller *@
         @if (Model.Comments.Count == 0)
         {
             <div class="text-muted">No comments yet.</div>
@@ -108,26 +170,23 @@
         {
             foreach (var c in Model.Comments)
             {
-                <div class="border rounded p-3 mb-3">
-                    <div class="d-flex justify-content-between align-items-start">
+                <div class="border rounded-3 p-3 mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
                         <div>
-                            <strong>@(c.User?.Email ?? "Unknown")</strong>
-                            <div class="text-muted" style="font-size: 12px;">
-                                Posted: @c.CreatedAt.ToLocalTime().ToString("dd MMM yyyy, HH:mm")
-                                @if (c.UpdatedAt != null)
-                                {
-                                    <span> · Edited</span>
-                                }
-                            </div>
+                            <strong>@(c.User?.FullName ?? c.User?.UserName ?? "User")</strong>
+                            <span class="text-muted" style="font-size: 12px;">
+                                • @c.CreatedAt.ToLocalTime().ToString("dd MMM yyyy HH:mm")
+                            </span>
                         </div>
 
                         @if (canModifyOwnComment(c.UserId))
                         {
-                            <div>
+                            <div class="d-flex gap-2">
                                 <a class="btn btn-sm btn-outline-secondary"
                                    href="@Url.Action("Edit", "Comments", new { id = c.Id })">
                                     Edit
                                 </a>
+
                                 <a class="btn btn-sm btn-outline-danger"
                                    href="@Url.Action("Delete", "Comments", new { id = c.Id })">
                                     Delete
@@ -136,10 +195,29 @@
                         }
                     </div>
 
-                    <div class="mt-2">@c.Text</div>
+                    <div>@c.Text</div>
                 </div>
             }
         }
+
+        <hr />
+
+        <h5 class="mb-2">Add a comment</h5>
+
+        <form asp-controller="Comments" asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="NewComment.TaskId" />
+
+            <div class="mb-2">
+                <textarea class="form-control"
+                          rows="3"
+                          asp-for="NewComment.Text"
+                          placeholder="Write a comment..."></textarea>
+                <span class="text-danger" asp-validation-for="NewComment.Text"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Post comment</button>
+        </form>
     </div>
 </div>
 

@@ -9,20 +9,25 @@
     ViewData["Title"] = "Tasks";
 }
 
-<h2>Tasks - @project?.Title</h2>
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h2 class="mb-1">Tasks - @project?.Title</h2>
+        <div class="text-muted" style="font-size: 13px;">
+            Click <strong>Open</strong> to view details, assign members, update status, and manage comments.
+        </div>
+    </div>
 
-@* Aici afisez butonul de Create doar daca userul are voie sa modifice (Organizer/Admin) *@
-@if (canModify)
-{
-    <p>
+    @* Aici afisez butonul de Create doar daca userul are voie sa modifice (Organizer/Admin) *@
+    @if (canModify)
+    {
         <a class="btn btn-primary"
            href="@Url.Action("Create", "TaskItems", new { projectId = project!.Id })">
-            Create Task
+            Create task
         </a>
-    </p>
-}
+    }
+</div>
 
-<table class="table">
+<table class="table align-middle">
     <thead>
         <tr>
             <th>Title</th>
@@ -30,21 +35,24 @@
             <th>Start</th>
             <th>End</th>
             <th>Media</th>
+            <th></th>
 
             @* Aici arat coloana Actions doar daca userul poate edita/sterge *@
             @if (canModify)
             {
-                <th>Actions</th>
+                <th class="text-end">Actions</th>
             }
         </tr>
     </thead>
+
     <tbody>
         @foreach (var t in Model)
         {
             <tr>
-                <td>
-                    @* SINGURA MODIFICARE: titlul devine link spre pagina Details *@
-                    <a href="@Url.Action("Details", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">
+                <td style="min-width: 220px;">
+                    @* Titlul ramane link spre pagina Details *@
+                    <a class="text-decoration-none"
+                       href="@Url.Action("Details", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">
                         @t.Title
                     </a>
                 </td>
@@ -54,7 +62,7 @@
                 <td>@t.EndDate.ToString("dd MMM yyyy")</td>
 
                 @* Aici afisez media diferit in functie de tip *@
-                <td>
+                <td style="min-width: 260px;">
                     @if (t.MediaType == TaskManager.Models.MediaType.Image)
                     {
                         @* Thumbnail + click sa se deschida full *@
@@ -88,13 +96,27 @@
                     }
                 </td>
 
+                @* Buton dedicat pentru Details, ca sa fie clar unde intri pt asignare/status/comentarii *@
+                <td class="text-end">
+                    <a class="btn btn-sm btn-outline-primary"
+                       href="@Url.Action("Details", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">
+                        Open
+                    </a>
+                </td>
+
                 @* Aici arat Edit/Delete doar daca userul are voie sa modifice *@
                 @if (canModify)
                 {
-                    <td>
-                        <a href="@Url.Action("Edit", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">Edit</a>
-                        |
-                        <a href="@Url.Action("Delete", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">Delete</a>
+                    <td class="text-end" style="white-space: nowrap;">
+                        <a class="btn btn-sm btn-outline-secondary"
+                           href="@Url.Action("Edit", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">
+                            Edit
+                        </a>
+
+                        <a class="btn btn-sm btn-outline-danger ms-2"
+                           href="@Url.Action("Delete", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">
+                            Delete
+                        </a>
                     </td>
                 }
             </tr>
