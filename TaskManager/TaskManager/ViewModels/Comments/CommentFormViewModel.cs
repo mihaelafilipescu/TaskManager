@@ -4,11 +4,12 @@ namespace TaskManager.ViewModels.Comments
 {
     public class CommentFormViewModel
     {
-        // TaskId imi spune la ce task se ataseaza comentariul.
+        // Asta imi spune la ce task se leaga comentariul
         public int TaskId { get; set; }
 
-        // Pun Required ca sa prind validarea si server-side.
-        [Required]
+        // Cerinta: textul sa nu fie gol
+        [Required(ErrorMessage = "Comment text cannot be empty.")]
+        [StringLength(1000, MinimumLength = 1, ErrorMessage = "Comment text cannot be empty.")]
         public string Text { get; set; } = string.Empty;
     }
 }

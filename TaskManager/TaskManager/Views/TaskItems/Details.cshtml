@@ -4,7 +4,6 @@
     ViewData["Title"] = "Task details";
     var t = Model.Task;
 
-    // Functie mica pentru UI: imi arata daca userul poate edita/sterge un comentariu.
     bool canModifyOwnComment(string commentUserId)
     {
         return commentUserId == Model.CurrentUserId || User.IsInRole("Admin");
@@ -45,7 +44,6 @@
         <div>
             <strong>Media</strong>
             <div class="mt-2">
-                @* Aici afisez diferit media in functie de tip *@
                 @if (t.MediaType == TaskManager.Models.MediaType.Image)
                 {
                     <a href="@t.MediaContent" target="_blank" title="Open image">
@@ -77,22 +75,31 @@
     </div>
     <div class="card-body">
 
-        @* Form-ul de add comment. Il trimit la CommentsController.Create *@
+        @* Mesaj simplu daca userul a incercat sa posteze gol *@
+        @if (TempData["CommentError"] != null)
+        {
+            <div class="alert alert-danger">
+                @TempData["CommentError"]
+            </div>
+        }
+
+        @* Form-ul de add comment. Folosesc asp-for ca sa mearga validarea client-side *@
         <form asp-controller="Comments" asp-action="Create" method="post" class="mb-4">
             @Html.AntiForgeryToken()
 
-            <input type="hidden" name="TaskId" value="@t.Id" />
+            <input type="hidden" asp-for="NewComment.TaskId" />
 
             <div class="mb-2">
-                <label class="form-label">Add a comment</label>
-                <textarea class="form-control" name="Text" rows="3" placeholder="Write your comment here..."></textarea>
+                <label class="form-label" asp-for="NewComment.Text">Add a comment</label>
+                <textarea class="form-control" asp-for="NewComment.Text" rows="3" placeholder="Write your comment here..."></textarea>
+                <span class="text-danger" asp-validation-for="NewComment.Text"></span>
                 <div class="form-text">Comment text cannot be empty.</div>
             </div>
 
             <button type="submit" class="btn btn-primary">Post comment</button>
         </form>
 
-        @* Afisez comentariile cronologic (sortate in controller) *@
+        @* Comentariile sunt deja sortate cronologic in controller *@
         @if (Model.Comments.Count == 0)
         {
             <div class="text-muted">No comments yet.</div>
@@ -114,7 +121,6 @@
                             </div>
                         </div>
 
-                        @* Arat Edit/Delete doar daca e autorul sau Admin *@
                         @if (canModifyOwnComment(c.UserId))
                         {
                             <div>
@@ -136,3 +142,7 @@
         }
     </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
