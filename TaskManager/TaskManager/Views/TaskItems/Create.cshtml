@@ -1,4 +1,4 @@
-﻿@model TaskItem
+﻿@model TaskManager.ViewModels.TaskItems.TaskItemFormViewModel
 
 @{
     ViewData["Title"] = "Create Task";
@@ -6,58 +6,117 @@
 
 <h2>Create Task</h2>
 
-<form asp-action="Create" method="post">
+<form asp-action="Create"
+      asp-route-projectId="@Model.ProjectId"
+      method="post"
+      enctype="multipart/form-data">
 
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    @* Aici afisez toate erorile de validare *@
+    <div asp-validation-summary="All" class="text-danger"></div>
 
+    @* Title *@
     <div class="mb-3">
         <label asp-for="Title" class="form-label"></label>
         <input asp-for="Title" class="form-control" />
         <span asp-validation-for="Title" class="text-danger"></span>
     </div>
 
+    @* Description *@
     <div class="mb-3">
         <label asp-for="Description" class="form-label"></label>
-        <textarea asp-for="Description" class="form-control"></textarea>
+        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
 
+    @* Status *@
     <div class="mb-3">
         <label asp-for="Status" class="form-label"></label>
-        <select asp-for="Status" class="form-select"
+        <select asp-for="Status"
+                class="form-select"
                 asp-items="Html.GetEnumSelectList<TaskManager.Models.TaskStatus>()">
         </select>
         <span asp-validation-for="Status" class="text-danger"></span>
     </div>
 
+    @* Dates *@
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label asp-for="StartDate" class="form-label"></label>
+            @Html.TextBoxFor(m => m.StartDate, "{0:yyyy-MM-dd}",
+            new { @class = "form-control", type = "date" })
+            <span asp-validation-for="StartDate" class="text-danger"></span>
+        </div>
 
-    <div class="mb-3">
-        <label asp-for="StartDate" class="form-label"></label>
-        <input asp-for="StartDate" type="date" class="form-control" />
-        <span asp-validation-for="StartDate" class="text-danger"></span>
+        <div class="col-md-6 mb-3">
+            <label asp-for="EndDate" class="form-label"></label>
+            @Html.TextBoxFor(m => m.EndDate, "{0:yyyy-MM-dd}",
+                        new { @class = "form-control", type = "date" })
+            <span asp-validation-for="EndDate" class="text-danger"></span>
+        </div>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="EndDate" class="form-label"></label>
-        <input asp-for="EndDate" type="date" class="form-control" />
-        <span asp-validation-for="EndDate" class="text-danger"></span>
-    </div>
-
+    @* MediaType *@
     <div class="mb-3">
         <label asp-for="MediaType" class="form-label"></label>
-        <select asp-for="MediaType" class="form-select"
+        <select asp-for="MediaType"
+                class="form-select"
+                id="mediaTypeSelect"
                 asp-items="Html.GetEnumSelectList<TaskManager.Models.MediaType>()">
         </select>
         <span asp-validation-for="MediaType" class="text-danger"></span>
     </div>
 
-    <div class="mb-3">
-        <label asp-for="MediaContent" class="form-label"></label>
-        <textarea asp-for="MediaContent" class="form-control" rows="3"></textarea>
+    @* TEXT *@
+    <div class="mb-3" id="mediaTextBox">
+        <label class="form-label">Text content</label>
+        <textarea asp-for="MediaContent"
+                  class="form-control"
+                  rows="3"
+                  placeholder="Write text here..."></textarea>
         <span asp-validation-for="MediaContent" class="text-danger"></span>
     </div>
 
+    @* VIDEO *@
+    <div class="mb-3" id="mediaVideoBox" style="display:none;">
+        <label class="form-label">Video URL (YouTube / Vimeo)</label>
+        <input asp-for="MediaContent"
+               class="form-control"
+               placeholder="https://www.youtube.com/watch?v=..." />
+        <span asp-validation-for="MediaContent" class="text-danger"></span>
+        <div class="form-text">Paste a link. Do not upload a video file.</div>
+    </div>
+
+    @* IMAGE *@
+    <div class="mb-3" id="mediaImageBox" style="display:none;">
+        <label class="form-label">Upload image</label>
+
+        @* Asta e input-ul real, dar il ascund ca sa nu mai apara textul in romana de la browser *@
+        <input asp-for="ImageFile"
+               type="file"
+               accept="image/*"
+               class="d-none"
+               id="imageInput" />
+        <span asp-validation-for="ImageFile" class="text-danger"></span>
+
+        @* Aici fac UI custom (English) *@
+        <div class="d-flex align-items-center gap-2 mt-1">
+            <button type="button" class="btn btn-outline-primary btn-sm" id="chooseImageBtn">
+                Choose file
+            </button>
+            <span class="text-muted small" id="imageFileName">No file chosen</span>
+        </div>
+
+        @* Preview *@
+        <div class="mt-3" id="imagePreviewBox" style="display:none;">
+            <div class="text-muted small mb-1">Preview:</div>
+            <img id="imagePreview"
+                 alt="preview"
+                 style="max-width:260px;height:auto;border:1px solid #ddd;border-radius:10px;padding:6px;" />
+        </div>
+    </div>
+
     <button type="submit" class="btn btn-primary">Save</button>
+
     <a asp-action="Index"
        asp-controller="TaskItems"
        asp-route-projectId="@Model.ProjectId"
@@ -69,3 +128,69 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
+<script>
+    // ATENTIE: MediaType vine ca NUMAR (enum), nu ca string
+    // 0 = Text, 1 = Image, 2 = Video
+
+    function updateMediaUI() {
+        const val = document.getElementById("mediaTypeSelect").value;
+
+        const textBox = document.getElementById("mediaTextBox");
+        const imageBox = document.getElementById("mediaImageBox");
+        const videoBox = document.getElementById("mediaVideoBox");
+
+        textBox.style.display = "none";
+        imageBox.style.display = "none";
+        videoBox.style.display = "none";
+
+        if (val === "0") textBox.style.display = "block";
+        if (val === "1") imageBox.style.display = "block";
+        if (val === "2") videoBox.style.display = "block";
+    }
+
+    // Aici leg butonul custom de input-ul real si updatez numele fisierului + preview
+    function wireImageUploadUI() {
+        const input = document.getElementById("imageInput");
+        const btn = document.getElementById("chooseImageBtn");
+        const name = document.getElementById("imageFileName");
+
+        const previewBox = document.getElementById("imagePreviewBox");
+        const previewImg = document.getElementById("imagePreview");
+
+        if (!input || !btn || !name) return;
+
+        btn.addEventListener("click", function () {
+            input.click();
+        });
+
+        input.addEventListener("change", function () {
+            const file = input.files && input.files[0];
+
+            if (!file) {
+                name.textContent = "No file chosen";
+                previewBox.style.display = "none";
+                previewImg.src = "";
+                return;
+            }
+
+            name.textContent = file.name;
+
+            // Aici fac preview doar daca e imagine
+            if (file.type && file.type.startsWith("image/")) {
+                const url = URL.createObjectURL(file);
+                previewImg.src = url;
+                previewBox.style.display = "block";
+            } else {
+                previewBox.style.display = "none";
+                previewImg.src = "";
+            }
+        });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("mediaTypeSelect").addEventListener("change", updateMediaUI);
+        updateMediaUI();
+        wireImageUploadUI();
+    });
+</script>

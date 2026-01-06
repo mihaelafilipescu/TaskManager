@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Identity;
 
 // Controller, IActionResult, View etc.
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 // Modelele noastre: ApplicationUser si RegisterViewModel
 using TaskManager.Models;
 

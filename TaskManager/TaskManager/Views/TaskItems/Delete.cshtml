@@ -1,14 +1,31 @@
 ﻿@model TaskManager.Models.TaskItem
+
 @{
     ViewData["Title"] = "Delete Task";
 }
 
 <h2>Delete Task</h2>
 
-<p>Sigur vrei să ștergi task-ul <b>@Model.Title</b>?</p>
+<p>
+    Are you sure you want to delete the task
+    <strong>@Model.Title</strong>?
+</p>
 
-<form method="post">
+<form asp-action="DeleteConfirmed"
+      asp-controller="TaskItems"
+      asp-route-projectId="@Model.ProjectId"
+      asp-route-id="@Model.Id"
+      method="post">
+
+    @* Protectie CSRF *@
     @Html.AntiForgeryToken()
-    <button class="btn btn-danger" type="submit">Delete</button>
-    <a class="btn btn-secondary" href="@Url.Action("Index", "TaskItems", new { projectId = Model.ProjectId })">Back</a>
+
+    <button type="submit" class="btn btn-danger">
+        Delete
+    </button>
+
+    <a class="btn btn-secondary"
+       href="@Url.Action("Index", "TaskItems", new { projectId = Model.ProjectId })">
+        Back
+    </a>
 </form>
