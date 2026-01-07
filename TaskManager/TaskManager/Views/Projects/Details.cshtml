@@ -23,7 +23,48 @@
         }
     </div>
 
-    <hr />
+    <hr id="ai-summary" />
+    <div class="d-flex align-items-center justify-content-between">
+        <h4 class="mb-0">🤖 AI Project Summary</h4>
+
+        <!-- butonul care regenereaza summary, pus sus in dreapta ca sa fie mega evident -->
+        <form asp-controller="Projects" asp-action="GenerateSummary" method="post" class="ms-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="projectId" value="@Model.Id" />
+            <button type="submit" class="btn btn-primary">
+                ✨ Update AI Summary
+            </button>
+        </form>
+    </div>
+
+    @{
+        var lastSummary = Model.Summaries?
+        .OrderByDescending(s => s.GeneratedAt)
+        .FirstOrDefault();
+    }
+
+    @if (lastSummary != null)
+    {
+        <div class="card mb-3 mt-3 ai-summary-card">
+            <div class="card-body">
+                <div class="mb-2 ai-summary">
+                    @Html.Raw(lastSummary.Content)
+                </div>
+                <small class="text-muted">Generated at @lastSummary.GeneratedAt.ToLocalTime()</small>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted mt-3">No project summary available.</p>
+    }
+
+
+    <!-- imi fac un buton vizibil sus, ca sa sar direct la sectiunea de AI summary -->
+    <a href="#ai-summary" class="btn btn-outline-primary btn-sm mb-3">
+        🤖 Jump to AI Summary
+    </a>
+
 
     <!-- Informatii generale despre proiect -->
     <div class="row mb-4">
@@ -118,3 +159,8 @@
     </div>
 
 </div>
+<!-- buton plutitor care ma duce direct la AI summary, ca sa fie mereu la indemana -->
+<a href="#ai-summary" class="ai-float-btn" title="Jump to AI Summary">
+    🤖
+</a>
+

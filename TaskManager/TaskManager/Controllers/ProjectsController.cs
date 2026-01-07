@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskManager.Data;
 using TaskManager.Models;
 using TaskManager.ViewModels.Projects;
+using TaskManager.Services;
 
 namespace TaskManager.Controllers
 {
@@ -13,12 +14,19 @@ namespace TaskManager.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IProjectSummaryAiService _projectSummaryAiService;
 
-        public ProjectsController(ApplicationDbContext db, UserManager<ApplicationUser> userManager)
+        public ProjectsController(
+      ApplicationDbContext db,
+      UserManager<ApplicationUser> userManager,
+      IProjectSummaryAiService projectSummaryAiService)
         {
             _db = db;
             _userManager = userManager;
+            _projectSummaryAiService = projectSummaryAiService;
         }
+
+
 
         // GET: /Projects/Create
         [HttpGet]
@@ -103,6 +111,7 @@ namespace TaskManager.Controllers
                 .Include(p => p.Members)
                     .ThenInclude(pm => pm.User)
                 .Include(p => p.TaskItems)
+                .Include(p => p.Summaries)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
             // Daca proiectul nu exista
@@ -345,5 +354,38 @@ namespace TaskManager.Controllers
             // Aici permit stergere daca sunt admin sau daca sunt organizer (creatorul proiectului)
             return User.IsInRole("Admin") || project.OrganizerId == userId;
         }
+
+        //AI SUMMARY
+
+        [HttpPost]
+        [Authorize]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> GenerateSummary(int projectId)
+        {
+            // aici se apeleaza AI-ul (Gemini)
+            var aiResult = await _projectSummaryAiService.GenerateProjectSummaryAsync(projectId);
+
+            // daca AI-ul nu raspunde, salvam un mesaj safe
+            var contentToSave = aiResult.Success
+                ? aiResult.Summary
+                : "AI summary could not be generated at this time.";
+
+            // salvam rezultatul in baza de date
+            var summary = new ProjectSummary
+            {
+                ProjectId = projectId,
+                Content = contentToSave,
+                GeneratedAt = DateTime.UtcNow
+            };
+
+            _db.ProjectSummaries.Add(summary);
+            await _db.SaveChangesAsync();
+
+            // ne intoarcem pe pagina de details
+            return RedirectToAction("Details", new { id = projectId });
+        }
+
+
+
     }
 }

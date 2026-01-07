@@ -3,7 +3,8 @@
     using Microsoft.AspNetCore.Identity;
     using System;
     using System.Collections.Generic;
-    public class ApplicationUser : IdentityUser 
+
+    public class ApplicationUser : IdentityUser
     {
         public string? FullName { get; set; } = default!;
         public DateTime? CreatedAt { get; set; } = DateTime.UtcNow;
@@ -14,6 +15,7 @@
         public ICollection<ProjectMember> ProjectMemberships { get; set; } = new List<ProjectMember>();
         public ICollection<TaskAssignment> TaskAssignments { get; set; } = new List<TaskAssignment>();
         public ICollection<Comment> Comments { get; set; } = new List<Comment>();
-        public ICollection<ProjectSummary> GeneratedSummaries { get; set; } = new List<ProjectSummary>();
+
+        // am scos GeneratedSummaries ca sa nu mai depindem de cine a generat rezumatul
     }
 }

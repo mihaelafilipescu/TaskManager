@@ -436,4 +436,6 @@ obj/
 .vs/
 TaskManager/wwwroot/uploads/
 wwwroot/
+appsettings.Development.json
+
 

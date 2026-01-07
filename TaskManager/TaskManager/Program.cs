@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using TaskManager.Data;
 using TaskManager.Models;
+using TaskManager.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,6 +24,9 @@ builder.Services.AddDefaultIdentity<ApplicationUser>(options =>
 // Aici activez MVC (Controllers + Views)
 // Important: o singura data, altfel e duplicat inutil
 builder.Services.AddControllersWithViews();
+builder.Services.AddScoped<IProjectSummaryAiService, GoogleProjectSummaryAiService>();
+
+
 
 var app = builder.Build();
 

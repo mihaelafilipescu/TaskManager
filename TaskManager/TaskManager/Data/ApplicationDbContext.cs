@@ -98,12 +98,12 @@ namespace TaskManager.Data
                 .HasForeignKey(ps => ps.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);//daca se sterge un proiect se sterg si rezumatele lui
 
-            //9. ProjectSummary - ApplicationUser
-            builder.Entity<ProjectSummary>()
-                .HasOne(ps => ps.GeneratedBy)//un rezumat e generat de un user
-                .WithMany(u => u.GeneratedSummaries)//un user poate genera mai multe rezumate
-                .HasForeignKey(ps => ps.GeneratedById)
-                .OnDelete(DeleteBehavior.Cascade);//daca stergem un user stergem si rezumatele lui
+            ////9. ProjectSummary - ApplicationUser
+            //builder.Entity<ProjectSummary>()
+            //    .HasOne(ps => ps.GeneratedBy)//un rezumat e generat de un user
+            //    .WithMany(u => u.GeneratedSummaries)//un user poate genera mai multe rezumate
+            //    .HasForeignKey(ps => ps.GeneratedById)
+            //    .OnDelete(DeleteBehavior.Cascade);//daca stergem un user stergem si rezumatele lui
 
             
         }
