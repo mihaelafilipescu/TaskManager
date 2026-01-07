@@ -114,7 +114,7 @@ No attributes. No links. No images. No scripts. No styles.
 
 Purpose:
 This text will be displayed inside a project management dashboard.
-It should sound intelligent and helpful, but not conversational.
+It should sound intelligent and helpful, but not conversational
 
 Hard rules:
 - Do NOT address the user directly.
