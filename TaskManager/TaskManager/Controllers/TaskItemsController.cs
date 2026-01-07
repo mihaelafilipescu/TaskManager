@@ -188,12 +188,12 @@ namespace TaskManager.Controllers
             return View(vm);
         }
 
-        // LISTA TASK-URI ASIGNATE USERULUI CURENT
-        // GET: /TaskItems/MyAssigned
+        // LISTA TASK-URI ASIGNATE USERULUI CURENT + FILTRU STATUS
+        // GET: /TaskItems/MyAssigned?status=InProgress sau ?status=Completed
         [HttpGet]
-        public async System.Threading.Tasks.Task<IActionResult> MyAssigned()
+        public async System.Threading.Tasks.Task<IActionResult> MyAssigned(TaskManager.Models.TaskStatus? status)
         {
-            // Iau userul logat
+            // Aici iau userul logat
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrWhiteSpace(userId))
                 return Forbid();
@@ -221,19 +221,37 @@ namespace TaskManager.Controllers
                 .Distinct()
                 .ToList();
 
+            // Daca nu am nimic asignat, trimit un VM gol
             if (taskIdsAssignedToMeNow.Count == 0)
-                return View(new List<TaskItem>());
+            {
+                return View(new TaskManager.ViewModels.TaskItems.MyAssignedTasksViewModel
+                {
+                    Tasks = new List<TaskItem>(),
+                    StatusFilter = status
+                });
+            }
 
             // Iau task-urile efective + proiectul, ca sa afisez frumos in tabel
-            var tasks = await _db.TaskItems
+            var tasksQuery = _db.TaskItems
                 .AsNoTracking()
                 .Include(t => t.Project)
-                .Where(t => taskIdsAssignedToMeNow.Contains(t.Id))
+                .Where(t => taskIdsAssignedToMeNow.Contains(t.Id));
+
+            // Aici aplic filtrul de status doar daca userul a ales unul
+            if (status.HasValue)
+                tasksQuery = tasksQuery.Where(t => t.Status == status.Value);
+
+            var tasks = await tasksQuery
                 .OrderBy(t => t.EndDate)
                 .ToListAsync();
 
-            return View(tasks);
+            return View(new TaskManager.ViewModels.TaskItems.MyAssignedTasksViewModel
+            {
+                Tasks = tasks,
+                StatusFilter = status
+            });
         }
+
 
         // ASIGNARE TASK (ORGANIZER / ADMIN)
         // POST: /TaskItems/Assign
