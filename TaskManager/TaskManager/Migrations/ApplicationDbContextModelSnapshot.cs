@@ -267,7 +267,7 @@ namespace TaskManager.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Comments");
+                    b.ToTable("Comments", (string)null);
                 });
 
             modelBuilder.Entity("TaskManager.Models.Project", b =>
@@ -301,7 +301,7 @@ namespace TaskManager.Migrations
 
                     b.HasIndex("OrganizerId");
 
-                    b.ToTable("Projects");
+                    b.ToTable("Projects", (string)null);
                 });
 
             modelBuilder.Entity("TaskManager.Models.ProjectMember", b =>
@@ -332,7 +332,7 @@ namespace TaskManager.Migrations
                     b.HasIndex("ProjectId", "UserId")
                         .IsUnique();
 
-                    b.ToTable("ProjectMembers");
+                    b.ToTable("ProjectMembers", (string)null);
                 });
 
             modelBuilder.Entity("TaskManager.Models.ProjectSummary", b =>
@@ -357,7 +357,7 @@ namespace TaskManager.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("ProjectSummaries");
+                    b.ToTable("ProjectSummaries", (string)null);
                 });
 
             modelBuilder.Entity("TaskManager.Models.TaskAssignment", b =>
@@ -390,7 +390,7 @@ namespace TaskManager.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("TaskAssignments");
+                    b.ToTable("TaskAssignments", (string)null);
                 });
 
             modelBuilder.Entity("TaskManager.Models.TaskItem", b =>
@@ -444,7 +444,7 @@ namespace TaskManager.Migrations
 
                     b.HasIndex("ProjectId");
 
-                    b.ToTable("TaskItems");
+                    b.ToTable("TaskItems", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>

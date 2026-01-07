@@ -21,9 +21,12 @@
     </div>
 
     <a class="btn btn-outline-secondary"
-       href="@Url.Action("Index", "TaskItems", new { projectId = t.ProjectId })">
-        Back to tasks
+       asp-controller="Projects"
+       asp-action="My">
+        <i class="bi bi-arrow-left"></i> Back to projects
     </a>
+
+
 </div>
 
 <div class="card mb-4">

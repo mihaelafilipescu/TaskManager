@@ -12,13 +12,14 @@
       method="post"
       enctype="multipart/form-data">
 
+    @Html.AntiForgeryToken()
+
     @* Pastrez id-ul task-ului *@
     <input type="hidden" asp-for="Id" />
 
     @* Pastrez imaginea veche daca nu incarc alta *@
     <input type="hidden" asp-for="ExistingImagePath" />
 
-    @* Aici afisez toate erorile *@
     <div asp-validation-summary="All" class="text-danger"></div>
 
     @* Title *@
@@ -35,6 +36,14 @@
         <span asp-validation-for="Description" class="text-danger"></span>
     </div>
 
+    @* Assignee *@
+    <div class="mb-3">
+        <label asp-for="SelectedAssigneeId" class="form-label">Assignee</label>
+        <select asp-for="SelectedAssigneeId" class="form-select" asp-items="Model.AssigneeOptions"></select>
+        <span asp-validation-for="SelectedAssigneeId" class="text-danger"></span>
+        <div class="form-text">Assign the task to a project member.</div>
+    </div>
+
     @* Status *@
     <div class="mb-3">
         <label asp-for="Status" class="form-label"></label>
@@ -49,15 +58,13 @@
     <div class="row">
         <div class="col-md-6 mb-3">
             <label asp-for="StartDate" class="form-label"></label>
-            @Html.TextBoxFor(m => m.StartDate, "{0:yyyy-MM-dd}",
-            new { @class = "form-control", type = "date" })
+            @Html.TextBoxFor(m => m.StartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
             <span asp-validation-for="StartDate" class="text-danger"></span>
         </div>
 
         <div class="col-md-6 mb-3">
             <label asp-for="EndDate" class="form-label"></label>
-            @Html.TextBoxFor(m => m.EndDate, "{0:yyyy-MM-dd}",
-                        new { @class = "form-control", type = "date" })
+            @Html.TextBoxFor(m => m.EndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
             <span asp-validation-for="EndDate" class="text-danger"></span>
         </div>
     </div>
@@ -76,19 +83,14 @@
     @* TEXT *@
     <div class="mb-3" id="mediaTextBox">
         <label class="form-label">Text content</label>
-        <textarea asp-for="MediaContent"
-                  class="form-control"
-                  rows="3"
-                  placeholder="Write text here..."></textarea>
+        <textarea asp-for="MediaContent" class="form-control" rows="3" placeholder="Write text here..."></textarea>
         <span asp-validation-for="MediaContent" class="text-danger"></span>
     </div>
 
     @* VIDEO *@
     <div class="mb-3" id="mediaVideoBox" style="display:none;">
         <label class="form-label">Video URL (YouTube / Vimeo)</label>
-        <input asp-for="MediaContent"
-               class="form-control"
-               placeholder="https://www.youtube.com/watch?v=..." />
+        <input asp-for="MediaContent" class="form-control" placeholder="https://www.youtube.com/watch?v=..." />
         <span asp-validation-for="MediaContent" class="text-danger"></span>
         <div class="form-text">Paste a link. Do not upload a video file.</div>
     </div>
@@ -97,117 +99,97 @@
     <div class="mb-3" id="mediaImageBox" style="display:none;">
         <label class="form-label">Upload image</label>
 
-        @* Input-ul real (il ascund ca sa nu mai apara textul in romana din browser) *@
-        <input asp-for="ImageFile"
-               type="file"
-               accept="image/*"
-               class="d-none"
-               id="imageInput" />
+        <input asp-for="ImageFile" type="file" accept="image/*" class="d-none" id="imageInput" />
         <span asp-validation-for="ImageFile" class="text-danger"></span>
 
-        @* UI custom (English) *@
         <div class="d-flex align-items-center gap-2 mt-1">
-            <button type="button" class="btn btn-outline-primary btn-sm" id="chooseImageBtn">
-                Choose file
-            </button>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="chooseImageBtn">Choose file</button>
             <span class="text-muted small" id="imageFileName">No file chosen</span>
         </div>
 
-        @* Imaginea existenta (daca exista) *@
         @if (!string.IsNullOrWhiteSpace(Model.ExistingImagePath))
         {
             <div class="mt-3" id="existingImageBox">
                 <div class="text-muted small mb-1">Current image:</div>
-                <img src="@Model.ExistingImagePath"
-                     alt="current"
+                <img src="@Model.ExistingImagePath" alt="current"
                      style="max-width:260px;height:auto;border:1px solid #ddd;border-radius:10px;padding:6px;" />
             </div>
         }
 
-        @* Preview pentru imaginea noua *@
         <div class="mt-3" id="imagePreviewBox" style="display:none;">
             <div class="text-muted small mb-1">New preview:</div>
-            <img id="imagePreview"
-                 alt="preview"
+            <img id="imagePreview" alt="preview"
                  style="max-width:260px;height:auto;border:1px solid #ddd;border-radius:10px;padding:6px;" />
         </div>
     </div>
 
     <button type="submit" class="btn btn-primary">Update</button>
 
-    <a asp-action="Index"
-       asp-controller="TaskItems"
-       asp-route-projectId="@Model.ProjectId"
-       class="btn btn-secondary">
+    <a asp-action="Index" asp-controller="TaskItems" asp-route-projectId="@Model.ProjectId" class="btn btn-secondary">
         Cancel
     </a>
 </form>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+
+    <script>
+        // 0 = Text, 1 = Video, 2 = Image (daca enum-ul tau e altfel, ajusteaza aici)
+        function updateMediaUI() {
+            const val = document.getElementById("mediaTypeSelect").value;
+
+            const textBox = document.getElementById("mediaTextBox");
+            const imageBox = document.getElementById("mediaImageBox");
+            const videoBox = document.getElementById("mediaVideoBox");
+
+            textBox.style.display = "none";
+            imageBox.style.display = "none";
+            videoBox.style.display = "none";
+
+            if (val === "0") textBox.style.display = "block";
+            if (val === "1") videoBox.style.display = "block";
+            if (val === "2") imageBox.style.display = "block";
+        }
+
+        function wireImageUploadUI() {
+            const input = document.getElementById("imageInput");
+            const btn = document.getElementById("chooseImageBtn");
+            const name = document.getElementById("imageFileName");
+
+            const previewBox = document.getElementById("imagePreviewBox");
+            const previewImg = document.getElementById("imagePreview");
+
+            if (!input || !btn || !name) return;
+
+            btn.addEventListener("click", function () { input.click(); });
+
+            input.addEventListener("change", function () {
+                const file = input.files && input.files[0];
+
+                if (!file) {
+                    name.textContent = "No file chosen";
+                    previewBox.style.display = "none";
+                    previewImg.src = "";
+                    return;
+                }
+
+                name.textContent = file.name;
+
+                if (file.type && file.type.startsWith("image/")) {
+                    const url = URL.createObjectURL(file);
+                    previewImg.src = url;
+                    previewBox.style.display = "block";
+                } else {
+                    previewBox.style.display = "none";
+                    previewImg.src = "";
+                }
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function () {
+            document.getElementById("mediaTypeSelect").addEventListener("change", updateMediaUI);
+            updateMediaUI();
+            wireImageUploadUI();
+        });
+    </script>
 }
-
-<script>
-    // ATENTIE: MediaType vine ca NUMAR (enum), nu ca string
-    // 0 = Text, 1 = Image, 2 = Video
-
-    function updateMediaUI() {
-        const val = document.getElementById("mediaTypeSelect").value;
-
-        const textBox = document.getElementById("mediaTextBox");
-        const imageBox = document.getElementById("mediaImageBox");
-        const videoBox = document.getElementById("mediaVideoBox");
-
-        textBox.style.display = "none";
-        imageBox.style.display = "none";
-        videoBox.style.display = "none";
-
-        if (val === "0") textBox.style.display = "block";
-        if (val === "1") imageBox.style.display = "block";
-        if (val === "2") videoBox.style.display = "block";
-    }
-
-    // Aici fac UI custom pentru upload + numele fisierului + preview
-    function wireImageUploadUI() {
-        const input = document.getElementById("imageInput");
-        const btn = document.getElementById("chooseImageBtn");
-        const name = document.getElementById("imageFileName");
-
-        const previewBox = document.getElementById("imagePreviewBox");
-        const previewImg = document.getElementById("imagePreview");
-
-        if (!input || !btn || !name) return;
-
-        btn.addEventListener("click", function () {
-            input.click();
-        });
-
-        input.addEventListener("change", function () {
-            const file = input.files && input.files[0];
-
-            if (!file) {
-                name.textContent = "No file chosen";
-                previewBox.style.display = "none";
-                previewImg.src = "";
-                return;
-            }
-
-            name.textContent = file.name;
-
-            if (file.type && file.type.startsWith("image/")) {
-                const url = URL.createObjectURL(file);
-                previewImg.src = url;
-                previewBox.style.display = "block";
-            } else {
-                previewBox.style.display = "none";
-                previewImg.src = "";
-            }
-        });
-    }
-
-    document.addEventListener("DOMContentLoaded", function () {
-        document.getElementById("mediaTypeSelect").addEventListener("change", updateMediaUI);
-        updateMediaUI();
-        wireImageUploadUI();
-    });
-</script>
