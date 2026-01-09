@@ -428,3 +428,24 @@ TaskManager/wwwroot/css/.editorconfig
 
 # optional: random notes
 *.txt
+
+.vs/
+
+**/bin/
+**/obj/
+
+bin/
+obj/
+TaskManager/bin/
+TaskManager/obj/
+
+# ignor build artifacts
+bin/
+obj/
+
+# ignor setari locale Visual Studio
+*.csproj.user
+.vs/
+TaskManager/wwwroot/uploads/
+wwwroot/
+

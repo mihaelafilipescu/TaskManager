@@ -1,0 +1,87 @@
+﻿@model TaskManager.Models.LoginViewModel
+<!-- Spunem ca acest View foloseste LoginViewModel -->
+@{
+    ViewData["Title"] = "Login";
+}
+
+<div class="container py-5">
+    <!-- Centerăm cardul ca să arate bine pe toate rezoluțiile -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-10 col-lg-6">
+
+            <!-- Header ca pe homepage -->
+            <span class="badge text-bg-light border mb-3">Account</span>
+            <h1 class="display-6 fw-bold mb-2">Welcome back</h1>
+            <p class="text-secondary mb-4">
+                Log in to access your dashboard and your projects.
+            </p>
+
+            <!-- Card cu shadow + rounded, consistent cu restul paginilor -->
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+
+                    <form asp-action="Login" method="post">
+                        <!-- Token anti-CSRF -->
+                        @Html.AntiForgeryToken()
+
+                        <!-- Afiseaza toate erorile de validare -->
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                        <!-- Camp pentru Email -->
+                        <div class="mb-3">
+                            <label asp-for="Login" class="form-label fw-semibold"></label>
+                            <input asp-for="Login"
+                                   class="form-control form-control-lg"
+                                   autocomplete="username"
+                                   placeholder="Email or username" />
+                            <span asp-validation-for="Login" class="text-danger"></span>
+                        </div>
+
+                        <!-- Camp pentru Password -->
+                        <div class="mb-3">
+                            <label asp-for="Password" class="form-label fw-semibold"></label>
+                            <input asp-for="Password"
+                                   class="form-control form-control-lg"
+                                   autocomplete="current-password"
+                                   placeholder="Your password" />
+                            <span asp-validation-for="Password" class="text-danger"></span>
+                        </div>
+
+                        <!-- Remember me (checkbox) -->
+                        <div class="form-check mb-4">
+                            <input class="form-check-input" asp-for="RememberMe" />
+                            <label class="form-check-label" asp-for="RememberMe"></label>
+                        </div>
+
+                        <!-- Butoane principale (ca pe homepage) -->
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </button>
+
+                            <!-- Link către register, ca să fie flow complet -->
+                            <a class="btn btn-outline-secondary btn-lg"
+                               asp-controller="Account"
+                               asp-action="Register">
+                                <i class="bi bi-person-plus"></i> Create an account
+                            </a>
+                        </div>
+
+                        <!-- Mic hint vizual (similar cu zona de tips de pe homepage) -->
+                        <div class="mt-4 small text-secondary">
+                            <i class="bi bi-info-circle"></i>
+                            Tip: Use the same email you registered with.
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Scripturi pentru validare client-side -->
+    <partial name="_ValidationScriptsPartial" />
+}

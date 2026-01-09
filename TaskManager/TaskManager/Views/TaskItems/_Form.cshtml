@@ -1,0 +1,94 @@
+﻿@model TaskManager.ViewModels.TaskItems.TaskItemFormViewModel
+
+<div asp-validation-summary="All" class="text-danger"></div>
+
+<div class="mb-3">
+    <label asp-for="Title" class="form-label"></label>
+    <input asp-for="Title" class="form-control" />
+    <span asp-validation-for="Title" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Description" class="form-label"></label>
+    <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+    <span asp-validation-for="Description" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Status" class="form-label"></label>
+    <select asp-for="Status" class="form-select"
+            asp-items="Html.GetEnumSelectList<TaskManager.Models.TaskStatus>()"></select>
+</div>
+
+<div class="row">
+    <div class="col-md-6 mb-3">
+        <label asp-for="StartDate" class="form-label"></label>
+        @Html.TextBoxFor(m => m.StartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+        <span asp-validation-for="StartDate" class="text-danger"></span>
+    </div>
+
+    <div class="col-md-6 mb-3">
+        <label asp-for="EndDate" class="form-label"></label>
+        @Html.TextBoxFor(m => m.EndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+        <span asp-validation-for="EndDate" class="text-danger"></span>
+    </div>
+</div>
+
+<div class="mb-3">
+    <label asp-for="MediaType" class="form-label"></label>
+    <select asp-for="MediaType" class="form-select" id="mediaTypeSelect"
+            asp-items="Html.GetEnumSelectList<TaskManager.Models.MediaType>()"></select>
+</div>
+
+<!-- Text -->
+<div class="mb-3" id="mediaTextBox">
+    <label class="form-label">Text content</label>
+    <textarea asp-for="MediaContent" class="form-control" rows="3"></textarea>
+    <span asp-validation-for="MediaContent" class="text-danger"></span>
+</div>
+
+<!-- Video -->
+<div class="mb-3" id="mediaVideoBox" style="display:none;">
+    <label class="form-label">Video URL (YouTube/Vimeo)</label>
+    <input asp-for="MediaContent" class="form-control" />
+    <span asp-validation-for="MediaContent" class="text-danger"></span>
+</div>
+
+<!-- Image -->
+<div class="mb-3" id="mediaImageBox" style="display:none;">
+    <label class="form-label">Upload image</label>
+    <input asp-for="ImageFile" type="file" class="form-control" accept="image/*" />
+    <span asp-validation-for="ImageFile" class="text-danger"></span>
+
+    @* Aici tin path-ul vechi cand editez, ca sa nu pierd imaginea *@
+    <input asp-for="ExistingImagePath" type="hidden" />
+
+    @if (!string.IsNullOrWhiteSpace(Model.ExistingImagePath))
+    {
+        <div class="mt-2">
+            <div class="text-muted small">Current image:</div>
+            <img src="@Model.ExistingImagePath" alt="Task image" style="max-width: 260px; height:auto;" />
+        </div>
+    }
+</div>
+
+<script>
+    // Aici ascund/afisez inputurile in functie de tipul media ales
+    function updateMediaUI() {
+        const val = document.getElementById("mediaTypeSelect").value;
+
+        const textBox = document.getElementById("mediaTextBox");
+        const videoBox = document.getElementById("mediaVideoBox");
+        const imageBox = document.getElementById("mediaImageBox");
+
+        // 0=Text, 1=Image, 2=Video (asa e enum-ul tau)
+        textBox.style.display = (val === "Text") ? "block" : "none";
+        imageBox.style.display = (val === "Image") ? "block" : "none";
+        videoBox.style.display = (val === "Video") ? "block" : "none";
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+        document.getElementById("mediaTypeSelect").addEventListener("change", updateMediaUI);
+        updateMediaUI();
+    });
+</script>

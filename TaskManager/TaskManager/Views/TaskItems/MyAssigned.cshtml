@@ -1,0 +1,58 @@
+﻿@model List<TaskManager.Models.TaskItem>
+
+@{
+    ViewData["Title"] = "My tasks";
+}
+
+<div class="d-flex align-items-center justify-content-between mb-3">
+    <div>
+        <h2 class="mb-1">My tasks</h2>
+        <div class="text-muted">Only tasks currently assigned to you are shown here.</div>
+    </div>
+
+    <!-- Ma intorc rapid la proiecte, ca sa nu stau sa dau back -->
+    <a class="btn btn-outline-secondary"
+       asp-controller="Projects"
+       asp-action="My">
+        Back to projects
+    </a>
+</div>
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="alert alert-info">
+        No tasks assigned to you right now.
+    </div>
+}
+else
+{
+    <table class="table align-middle">
+        <thead>
+            <tr>
+                <th>Task</th>
+                <th>Project</th>
+                <th>Status</th>
+                <th>End</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in Model)
+            {
+                <tr>
+                    <td>@t.Title</td>
+                    <td>@t.Project?.Title</td>
+                    <td>@t.Status</td>
+                    <td>@t.EndDate.ToString("dd MMM yyyy")</td>
+                    <td class="text-end">
+                        <!-- Deschid pagina de details, ca acolo e si status + comentarii -->
+                        <a class="btn btn-sm btn-outline-primary"
+                           href="@Url.Action("Details", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">
+                            Open
+                        </a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
