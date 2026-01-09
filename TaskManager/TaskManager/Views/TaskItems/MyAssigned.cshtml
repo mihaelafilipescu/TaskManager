@@ -1,7 +1,27 @@
-﻿@model List<TaskManager.Models.TaskItem>
+﻿@model TaskManager.ViewModels.TaskItems.MyAssignedTasksViewModel
+@using TaskItemStatus = TaskManager.Models.TaskStatus
 
 @{
     ViewData["Title"] = "My tasks";
+
+    var tasks = Model?.Tasks ?? new List<TaskManager.Models.TaskItem>();
+    var filter = Model?.StatusFilter;
+
+    string StatusLabel(TaskItemStatus s) => s switch
+    {
+        TaskItemStatus.NotStarted => "Not Started",
+        TaskItemStatus.InProgress => "In Progress",
+        TaskItemStatus.Completed => "Completed",
+        _ => s.ToString()
+    };
+
+    string StatusBadge(TaskItemStatus s) => s switch
+    {
+        TaskItemStatus.NotStarted => "static",     // albastru inchis
+        TaskItemStatus.InProgress => "progres",    // roz
+        TaskItemStatus.Completed => "functional",  // verde viu
+        _ => "static"
+    };
 }
 
 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -10,7 +30,6 @@
         <div class="text-muted">Only tasks currently assigned to you are shown here.</div>
     </div>
 
-    <!-- Ma intorc rapid la proiecte, ca sa nu stau sa dau back -->
     <a class="btn btn-outline-secondary"
        asp-controller="Projects"
        asp-action="My">
@@ -18,7 +37,35 @@
     </a>
 </div>
 
-@if (Model == null || Model.Count == 0)
+<div class="d-flex align-items-center gap-2 mb-3">
+    @{
+        var allBtn = filter == null ? "btn btn-primary" : "btn btn-outline-primary";
+        var inProgressBtn = filter == TaskItemStatus.InProgress ? "btn btn-primary" : "btn btn-outline-primary";
+        var completedBtn = filter == TaskItemStatus.Completed ? "btn btn-primary" : "btn btn-outline-primary";
+    }
+
+    <a class="@allBtn"
+       asp-controller="TaskItems"
+       asp-action="MyAssigned">
+        All
+    </a>
+
+    <a class="@inProgressBtn"
+       asp-controller="TaskItems"
+       asp-action="MyAssigned"
+       asp-route-status="InProgress">
+        In Progress
+    </a>
+
+    <a class="@completedBtn"
+       asp-controller="TaskItems"
+       asp-action="MyAssigned"
+       asp-route-status="Completed">
+        Completed
+    </a>
+</div>
+
+@if (tasks.Count == 0)
 {
     <div class="alert alert-info">
         No tasks assigned to you right now.
@@ -37,15 +84,18 @@ else
             </tr>
         </thead>
         <tbody>
-            @foreach (var t in Model)
+            @foreach (var t in tasks)
             {
                 <tr>
                     <td>@t.Title</td>
                     <td>@t.Project?.Title</td>
-                    <td>@t.Status</td>
+                    <td>
+                        <span class="badge @StatusBadge(t.Status)">
+                            @StatusLabel(t.Status)
+                        </span>
+                    </td>
                     <td>@t.EndDate.ToString("dd MMM yyyy")</td>
                     <td class="text-end">
-                        <!-- Deschid pagina de details, ca acolo e si status + comentarii -->
                         <a class="btn btn-sm btn-outline-primary"
                            href="@Url.Action("Details", "TaskItems", new { projectId = t.ProjectId, id = t.Id })">
                             Open

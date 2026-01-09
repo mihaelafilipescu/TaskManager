@@ -56,13 +56,14 @@ namespace TaskManager.Data
                 .WithMany(p => p.TaskItems)//un proiect are mai multe taskuri
                 .HasForeignKey(t => t.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);//daca stergem proiectul se sterg toate taskurile
-
             //4. Task - TaskAssignment
             builder.Entity<TaskAssignment>()
                 .HasOne(ta => ta.TaskItem)//fiecare TaskAssignment apartine unui Task
                 .WithMany(t => t.Assignments)//un task poate fi assigned mai multor persoane
                 .HasForeignKey(ta => ta.TaskId)
-                .OnDelete(DeleteBehavior.NoAction);//daca se sterge un task se sterg si asignarile
+                .OnDelete(DeleteBehavior.NoAction);//aici il las NoAction ca sa evit multiple cascade paths in SQL Server
+
+
 
             //5. TaskAssignment - ApplicationUser
             builder.Entity<TaskAssignment>()
@@ -77,12 +78,13 @@ namespace TaskManager.Data
                 .HasForeignKey(ta => ta.AssignedById)
                 .OnDelete(DeleteBehavior.Restrict);//daca incercam sa stergem un user dar exista taskuri asignate de el bd ul ne opreste
 
+
             //6. Task - Comment
             builder.Entity<Comment>()
                 .HasOne(c => c.TaskItem)//un comentariu apartine unui task
                 .WithMany(t => t.Comments)//un task poate avea mai multe comentarii
                 .HasForeignKey(c => c.TaskId)
-                .OnDelete(DeleteBehavior.NoAction);
+                .OnDelete(DeleteBehavior.NoAction);//aici il las NoAction ca sa evit multiple cascade paths in SQL Server
 
             //7. Comment - ApplicationUser
             builder.Entity<Comment>()
@@ -98,12 +100,12 @@ namespace TaskManager.Data
                 .HasForeignKey(ps => ps.ProjectId)
                 .OnDelete(DeleteBehavior.Cascade);//daca se sterge un proiect se sterg si rezumatele lui
 
-            //9. ProjectSummary - ApplicationUser
-            builder.Entity<ProjectSummary>()
-                .HasOne(ps => ps.GeneratedBy)//un rezumat e generat de un user
-                .WithMany(u => u.GeneratedSummaries)//un user poate genera mai multe rezumate
-                .HasForeignKey(ps => ps.GeneratedById)
-                .OnDelete(DeleteBehavior.Cascade);//daca stergem un user stergem si rezumatele lui
+            ////9. ProjectSummary - ApplicationUser
+            //builder.Entity<ProjectSummary>()
+            //    .HasOne(ps => ps.GeneratedBy)//un rezumat e generat de un user
+            //    .WithMany(u => u.GeneratedSummaries)//un user poate genera mai multe rezumate
+            //    .HasForeignKey(ps => ps.GeneratedById)
+            //    .OnDelete(DeleteBehavior.Cascade);//daca stergem un user stergem si rezumatele lui
 
             
         }

@@ -5,15 +5,15 @@ using Microsoft.AspNetCore.Mvc.ModelBinding.Validation;
 
 namespace TaskManager.Models
 {
-    public enum TaskStatus {
-        [Display(Name = "Not Started")]
-        NotStarted,
-        [Display(Name = "In Progress")]
-        InProgress,
-        [Display(Name = "Completed")]
-        Completed 
-    }
-    public enum MediaType { Text, Image, Video }
+    //public enum TaskStatus {
+    //    [Display(Name = "Not Started")]
+    //    NotStarted,
+    //    [Display(Name = "In Progress")]
+    //    InProgress,
+    //    [Display(Name = "Completed")]
+    //    Completed 
+    //}
+    //public enum MediaType { Text, Image, Video }
 
     public class TaskItem : IValidatableObject
     {
@@ -40,7 +40,7 @@ namespace TaskManager.Models
         public DateTime EndDate { get; set; }
 
         [Required]
-        public MediaType MediaType { get; set; } = MediaType.Text;
+        public TaskManager.Models.MediaType MediaType { get; set; } = TaskManager.Models.MediaType.Text;
 
         [Required, StringLength(4000)]
         public string MediaContent { get; set; } = default!;
@@ -60,10 +60,10 @@ namespace TaskManager.Models
 
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {
-            if (EndDate <= StartDate)
+            if (EndDate < StartDate)
             {
                 yield return new ValidationResult(
-                    "Data de finalizare trebuie să fie mai mare decât data de început.",
+                    "End date must be greater than or equal to start date.",
                     new[] { nameof(EndDate) }
                 );
             }

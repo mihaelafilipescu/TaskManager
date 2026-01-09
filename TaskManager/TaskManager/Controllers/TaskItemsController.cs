@@ -31,6 +31,84 @@ namespace TaskManager.Controllers
             _env = env;
         }
 
+        // Aici construiesc lista de useri din proiect pentru dropdown-ul de asignare
+        // Pun organizerul primul, apoi membrii (fara duplicat)
+        private async System.Threading.Tasks.Task<List<SelectListItem>> BuildAssigneeOptionsAsync(int projectId, string? selectedUserId)
+        {
+            var project = await _db.Projects
+                .AsNoTracking()
+                .Include(p => p.Members)
+                    .ThenInclude(pm => pm.User)
+                .Include(p => p.Organizer)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            var items = new List<SelectListItem>
+            {
+                new SelectListItem
+                {
+                    Value = string.Empty,
+                    Text = "Select assignee",
+                    Selected = string.IsNullOrWhiteSpace(selectedUserId)
+                }
+            };
+
+            if (project == null || !project.IsActive)
+                return items;
+
+            if (project.Organizer != null)
+            {
+                items.Add(new SelectListItem
+                {
+                    Value = project.Organizer.Id,
+                    Text = $"{project.Organizer.FullName} ({project.Organizer.UserName})",
+                    Selected = project.Organizer.Id == selectedUserId
+                });
+            }
+
+            var members = project.Members
+                .Where(m => m.IsActive)
+                .Select(m => m.User)
+                .Where(u => u != null)
+                .DistinctBy(u => u!.Id)
+                .OrderBy(u => u!.FullName)
+                .ToList();
+
+            foreach (var u in members)
+            {
+                if (project.Organizer != null && u!.Id == project.Organizer.Id)
+                    continue;
+
+                items.Add(new SelectListItem
+                {
+                    Value = u!.Id,
+                    Text = $"{u.FullName} ({u.UserName})",
+                    Selected = u.Id == selectedUserId
+                });
+            }
+
+            return items;
+        }
+
+        // Aici verific ca userul ales pentru asignare chiar apartine proiectului
+        private async System.Threading.Tasks.Task<bool> IsValidAssigneeAsync(int projectId, string selectedUserId)
+        {
+            if (string.IsNullOrWhiteSpace(selectedUserId))
+                return false;
+
+            var project = await _db.Projects
+                .AsNoTracking()
+                .Include(p => p.Members)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            if (project == null || !project.IsActive)
+                return false;
+
+            var isOrganizer = project.OrganizerId == selectedUserId;
+            var isMember = project.Members.Any(m => m.UserId == selectedUserId && m.IsActive);
+
+            return isOrganizer || isMember;
+        }
+
         // LISTA DE TASK-URI DINTR-UN PROIECT
         // GET: /TaskItems?projectId=1
         [HttpGet]
@@ -188,33 +266,24 @@ namespace TaskManager.Controllers
             return View(vm);
         }
 
-        // LISTA TASK-URI ASIGNATE USERULUI CURENT
-        // GET: /TaskItems/MyAssigned
+        // LISTA TASK-URI ASIGNATE USERULUI CURENT + FILTRU STATUS
         [HttpGet]
-        public async System.Threading.Tasks.Task<IActionResult> MyAssigned()
+        public async System.Threading.Tasks.Task<IActionResult> MyAssigned(TaskManager.Models.TaskStatus? status)
         {
-            // Iau userul logat
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrWhiteSpace(userId))
                 return Forbid();
 
-            // IMPORTANT:
-            // EF uneori crapa pe GroupBy + FirstOrDefault (EmptyProjectionMember).
-            // Ca sa evit, iau assignarile in memorie si calculez "asignarea curenta" per task.
-            // La laborator e ok, pentru ca numarul de randuri e mic.
             var allAssignments = await _db.TaskAssignments
                 .AsNoTracking()
                 .OrderByDescending(a => a.AssignedAt)
                 .ToListAsync();
 
-            // Aici imi fac "ultimul assignment" pentru fiecare TaskId:
-            // fiind sortate desc dupa AssignedAt, primul pe care il vad pentru un task e cel curent
             var latestByTask = allAssignments
                 .GroupBy(a => a.TaskId)
                 .Select(g => g.First())
                 .ToList();
 
-            // Filtrez doar task-urile unde asignarea curenta e catre userul logat
             var taskIdsAssignedToMeNow = latestByTask
                 .Where(a => a.UserId == userId)
                 .Select(a => a.TaskId)
@@ -222,21 +291,34 @@ namespace TaskManager.Controllers
                 .ToList();
 
             if (taskIdsAssignedToMeNow.Count == 0)
-                return View(new List<TaskItem>());
+            {
+                return View(new TaskManager.ViewModels.TaskItems.MyAssignedTasksViewModel
+                {
+                    Tasks = new List<TaskItem>(),
+                    StatusFilter = status
+                });
+            }
 
-            // Iau task-urile efective + proiectul, ca sa afisez frumos in tabel
-            var tasks = await _db.TaskItems
+            var tasksQuery = _db.TaskItems
                 .AsNoTracking()
                 .Include(t => t.Project)
-                .Where(t => taskIdsAssignedToMeNow.Contains(t.Id))
+                .Where(t => taskIdsAssignedToMeNow.Contains(t.Id));
+
+            if (status.HasValue)
+                tasksQuery = tasksQuery.Where(t => t.Status == status.Value);
+
+            var tasks = await tasksQuery
                 .OrderBy(t => t.EndDate)
                 .ToListAsync();
 
-            return View(tasks);
+            return View(new TaskManager.ViewModels.TaskItems.MyAssignedTasksViewModel
+            {
+                Tasks = tasks,
+                StatusFilter = status
+            });
         }
 
         // ASIGNARE TASK (ORGANIZER / ADMIN)
-        // POST: /TaskItems/Assign
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async System.Threading.Tasks.Task<IActionResult> Assign([Bind(Prefix = "AssignForm")] TaskAssignViewModel model)
@@ -248,21 +330,18 @@ namespace TaskManager.Controllers
             if (string.IsNullOrWhiteSpace(currentUserId))
                 return Forbid();
 
-            // Verific ca task-ul exista in proiect
             var task = await _db.TaskItems
                 .FirstOrDefaultAsync(t => t.Id == model.TaskId && t.ProjectId == model.ProjectId);
 
             if (task == null)
                 return NotFound();
 
-            // Daca nu a selectat nimic (sau a venit gol), nu fac nimic
             if (string.IsNullOrWhiteSpace(model.SelectedUserId))
             {
                 TempData["AssignError"] = "Please select a valid member.";
                 return RedirectToAction("Details", new { projectId = model.ProjectId, id = model.TaskId });
             }
 
-            // Verific ca userul selectat chiar apartine proiectului (member sau organizer)
             var project = await _db.Projects
                 .AsNoTracking()
                 .Include(p => p.Members)
@@ -280,7 +359,6 @@ namespace TaskManager.Controllers
                 return RedirectToAction("Details", new { projectId = model.ProjectId, id = model.TaskId });
             }
 
-            // Pastrez istoric: adaug un rand nou in TaskAssignments
             var assignment = new TaskAssignment
             {
                 TaskId = model.TaskId,
@@ -296,7 +374,6 @@ namespace TaskManager.Controllers
         }
 
         // SCHIMBARE STATUS (ORGANIZER/ADMIN sau MEMBRU ASIGNAT)
-        // POST: /TaskItems/UpdateStatus
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async System.Threading.Tasks.Task<IActionResult> UpdateStatus([Bind(Prefix = "StatusForm")] TaskStatusUpdateViewModel model)
@@ -315,7 +392,6 @@ namespace TaskManager.Controllers
 
             if (!canModify)
             {
-                // Daca nu e organizer/admin, verific ca e asignat curent
                 var currentAssigneeId = await _db.TaskAssignments
                     .AsNoTracking()
                     .Where(a => a.TaskId == model.TaskId)
@@ -334,11 +410,9 @@ namespace TaskManager.Controllers
         }
 
         // CREATE TASK - FORM
-        // GET: /TaskItems/Create?projectId=1
         [HttpGet]
         public async System.Threading.Tasks.Task<IActionResult> Create(int projectId)
         {
-            // Doar organizer/admin pot crea task-uri
             if (!await CanModifyTasks(projectId))
                 return Forbid();
 
@@ -349,14 +423,14 @@ namespace TaskManager.Controllers
                 ProjectId = projectId,
                 StartDate = today,
                 EndDate = today.AddDays(1),
-                MediaType = MediaType.Text
+                MediaType = MediaType.Text,
+                AssigneeOptions = await BuildAssigneeOptionsAsync(projectId, selectedUserId: null)
             };
 
             return View(model);
         }
 
         // CREATE TASK - SAVE
-        // POST: /TaskItems/Create?projectId=1
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async System.Threading.Tasks.Task<IActionResult> Create(int projectId, TaskItemFormViewModel model)
@@ -366,18 +440,24 @@ namespace TaskManager.Controllers
 
             model.ProjectId = projectId;
 
-            // Scot ora din date
             model.StartDate = model.StartDate.Date;
             model.EndDate = model.EndDate.Date;
 
-            // Regula logica
-            if (model.EndDate <= model.StartDate)
-                ModelState.AddModelError(nameof(model.EndDate), "End date must be after start date.");
+            if (model.EndDate < model.StartDate)
+                ModelState.AddModelError(nameof(model.EndDate), "End date must be after or equal to start date.");
+
+            // Aici validez ca userul ales la asignare e chiar din proiect
+            if (!await IsValidAssigneeAsync(projectId, model.SelectedAssigneeId))
+                ModelState.AddModelError(nameof(model.SelectedAssigneeId), "Please select a valid assignee from this project.");
 
             await ValidateAndHandleMediaAsync(model, isEdit: false);
 
             if (!ModelState.IsValid)
+            {
+                // Aici reumplu dropdown-ul, altfel view-ul ramane fara optiuni
+                model.AssigneeOptions = await BuildAssigneeOptionsAsync(projectId, model.SelectedAssigneeId);
                 return View(model);
+            }
 
             var entity = new TaskItem
             {
@@ -396,11 +476,21 @@ namespace TaskManager.Controllers
             _db.TaskItems.Add(entity);
             await _db.SaveChangesAsync();
 
+            // Aici salvez si asignarea initiala (istoric)
+            var currentUserId = _userManager.GetUserId(User) ?? string.Empty;
+            _db.TaskAssignments.Add(new TaskAssignment
+            {
+                TaskId = entity.Id,
+                UserId = model.SelectedAssigneeId,
+                AssignedById = currentUserId,
+                AssignedAt = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync();
+
             return RedirectToAction(nameof(Index), new { projectId });
         }
 
         // EDIT TASK - FORM
-        // GET: /TaskItems/Edit?projectId=1&id=5
         [HttpGet]
         public async System.Threading.Tasks.Task<IActionResult> Edit(int projectId, int id)
         {
@@ -414,6 +504,14 @@ namespace TaskManager.Controllers
             if (task == null)
                 return NotFound();
 
+            // Aici iau asignarea curenta ca sa o bifez in dropdown
+            var currentAssigneeId = await _db.TaskAssignments
+                .AsNoTracking()
+                .Where(a => a.TaskId == id)
+                .OrderByDescending(a => a.AssignedAt)
+                .Select(a => a.UserId)
+                .FirstOrDefaultAsync();
+
             var model = new TaskItemFormViewModel
             {
                 Id = task.Id,
@@ -425,14 +523,15 @@ namespace TaskManager.Controllers
                 EndDate = task.EndDate,
                 MediaType = task.MediaType,
                 MediaContent = task.MediaType == MediaType.Image ? null : task.MediaContent,
-                ExistingImagePath = task.MediaType == MediaType.Image ? task.MediaContent : null
+                ExistingImagePath = task.MediaType == MediaType.Image ? task.MediaContent : null,
+                SelectedAssigneeId = currentAssigneeId ?? string.Empty,
+                AssigneeOptions = await BuildAssigneeOptionsAsync(projectId, currentAssigneeId)
             };
 
             return View(model);
         }
 
         // EDIT TASK - SAVE
-        // POST: /TaskItems/Edit?projectId=1&id=5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async System.Threading.Tasks.Task<IActionResult> Edit(int projectId, int id, TaskItemFormViewModel model)
@@ -452,13 +551,21 @@ namespace TaskManager.Controllers
             model.StartDate = model.StartDate.Date;
             model.EndDate = model.EndDate.Date;
 
-            if (model.EndDate <= model.StartDate)
-                ModelState.AddModelError(nameof(model.EndDate), "End date must be after start date.");
+            if (model.EndDate < model.StartDate)
+                ModelState.AddModelError(nameof(model.EndDate), "End date must be after or equal to start date.");
+
+
+            if (!await IsValidAssigneeAsync(projectId, model.SelectedAssigneeId))
+                ModelState.AddModelError(nameof(model.SelectedAssigneeId), "Please select a valid assignee from this project.");
 
             await ValidateAndHandleMediaAsync(model, isEdit: true);
 
             if (!ModelState.IsValid)
+            {
+                // Aici reumplu dropdown-ul pentru asignare
+                model.AssigneeOptions = await BuildAssigneeOptionsAsync(projectId, model.SelectedAssigneeId);
                 return View(model);
+            }
 
             task.Title = model.Title;
             task.Description = model.Description;
@@ -468,13 +575,32 @@ namespace TaskManager.Controllers
             task.MediaType = model.MediaType;
             task.MediaContent = model.MediaContent ?? string.Empty;
 
+            // Aici salvez o noua asignare doar daca s-a schimbat userul
+            var currentAssigneeId = await _db.TaskAssignments
+                .AsNoTracking()
+                .Where(a => a.TaskId == id)
+                .OrderByDescending(a => a.AssignedAt)
+                .Select(a => a.UserId)
+                .FirstOrDefaultAsync();
+
+            if (!string.Equals(currentAssigneeId, model.SelectedAssigneeId, StringComparison.Ordinal))
+            {
+                var currentUserId = _userManager.GetUserId(User) ?? string.Empty;
+                _db.TaskAssignments.Add(new TaskAssignment
+                {
+                    TaskId = id,
+                    UserId = model.SelectedAssigneeId,
+                    AssignedById = currentUserId,
+                    AssignedAt = DateTime.UtcNow
+                });
+            }
+
             await _db.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index), new { projectId });
         }
 
         // DELETE TASK - CONFIRM
-        // GET: /TaskItems/Delete?projectId=1&id=5
         [HttpGet]
         public async System.Threading.Tasks.Task<IActionResult> Delete(int projectId, int id)
         {
@@ -492,7 +618,6 @@ namespace TaskManager.Controllers
         }
 
         // DELETE TASK - SAVE
-        // POST: /TaskItems/DeleteConfirmed?projectId=1&id=5
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async System.Threading.Tasks.Task<IActionResult> DeleteConfirmed(int projectId, int id)
@@ -506,11 +631,33 @@ namespace TaskManager.Controllers
             if (task == null)
                 return NotFound();
 
+            // Aici sterg intai asignarile, ca altfel FK-ul din TaskAssignments ma opreste sa sterg task-ul
+            var assignments = await _db.TaskAssignments
+                .Where(a => a.TaskId == id)
+                .ToListAsync();
+
+            if (assignments.Count > 0)
+                _db.TaskAssignments.RemoveRange(assignments);
+
+            // Aici sterg si comentariile, pentru ca si ele au FK spre TaskItems
+            // Le sterg hard pentru ca task-ul dispare complet, deci discutia nu mai are sens sa ramana
+            var comments = await _db.Comments
+                .Where(c => c.TaskId == id)
+                .ToListAsync();
+
+            if (comments.Count > 0)
+                _db.Comments.RemoveRange(comments);
+
+            // Abia acum sterg task-ul, dupa ce am scos tot ce depinde de el
             _db.TaskItems.Remove(task);
+
             await _db.SaveChangesAsync();
 
             return RedirectToAction(nameof(Index), new { projectId });
         }
+
+
+
 
         // VERIFICARE DREPT VIEW (MEMBER / ORGANIZER / ADMIN)
         private async System.Threading.Tasks.Task<bool> CanViewTasks(int projectId)
@@ -593,6 +740,22 @@ namespace TaskManager.Controllers
             if (!model.ImageFile.ContentType.StartsWith("image/"))
             {
                 ModelState.AddModelError(nameof(model.ImageFile), "Only image files are allowed.");
+                return;
+            }
+            var allowedExt = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp" };
+            var extLower = Path.GetExtension(model.ImageFile.FileName).ToLowerInvariant();
+
+            if (!allowedExt.Contains(extLower))
+            {
+                ModelState.AddModelError(nameof(model.ImageFile), "Allowed image types: JPG, PNG, GIF, WEBP.");
+                return;
+            }
+
+            // Size limit: 2MB
+            const long maxBytes = 2 * 1024 * 1024;
+            if (model.ImageFile.Length > maxBytes)
+            {
+                ModelState.AddModelError(nameof(model.ImageFile), "Image must be max 2MB.");
                 return;
             }
 

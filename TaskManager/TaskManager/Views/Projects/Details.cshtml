@@ -1,31 +1,117 @@
 ﻿@model TaskManager.Models.Project
 
 @{
-    ViewData["Title"] = "Project Details";
+    ViewData["Title"] = "Project details";
+
+    // Aici iau userId curent ca sa pot verifica daca e organizer
+    var currentUserId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+    // Aici tin minte daca userul e admin, ca sa nu repet conditia
+    var isAdmin = User.IsInRole("Admin");
+
+    // Aici decid daca userul poate edita/sterge proiectul (Admin sau Organizer)
+    var canManageProject = isAdmin || Model.OrganizerId == currentUserId;
+
+    // Aici verific daca userul curent e membru activ in proiect
+    // Folosesc IsActive ca sa nu aiba acces cineva scos din proiect
+    var isActiveMember = Model.Members.Any(m => m.UserId == currentUserId && m.IsActive);
+
+    // Aici decid daca userul poate regenera AI summary (Admin/Organizer/Member)
+    var canGenerateSummary = isAdmin || Model.OrganizerId == currentUserId || isActiveMember;
+}
+@* Aici afisez eroarea de la AI ca sa inteleg de ce nu a mers *@
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">
+        @TempData["Error"]
+    </div>
 }
 
 <div class="container mt-4">
 
-    <!-- Titlul proiectului + status -->
-    <div class="d-flex justify-content-between align-items-start mb-3">
+    <!-- Project header: title + status + actions -->
+    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
         <div>
             <h1 class="mb-1">@Model.Title</h1>
-            <p class="text-muted">@Model.Description</p>
+            <p class="text-muted mb-0">@Model.Description</p>
         </div>
 
-        @if (Model.IsActive)
+        <div class="d-flex align-items-center gap-2">
+            @if (Model.IsActive)
+            {
+                <span class="badge bg-success">Active</span>
+            }
+            else
+            {
+                <span class="badge bg-secondary">Inactive</span>
+            }
+
+            @* Aici afisez Edit + Delete doar daca sunt Admin sau Organizer *@
+            @if (canManageProject)
+            {
+                <a class="btn btn-outline-secondary"
+                   asp-controller="Projects"
+                   asp-action="Edit"
+                   asp-route-id="@Model.Id">
+                    <i class="bi bi-pencil"></i> Edit project
+                </a>
+
+                <a class="btn btn-outline-danger"
+                   asp-controller="Projects"
+                   asp-action="Delete"
+                   asp-route-id="@Model.Id">
+                    <i class="bi bi-trash"></i> Delete project
+                </a>
+            }
+        </div>
+    </div>
+
+    <hr id="ai-summary" />
+
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <h4 class="mb-0">🤖 AI Project Summary</h4>
+
+        @* Aici las butonul de regenerare pentru Admin/Organizer + orice membru activ din proiect *@
+        @if (canGenerateSummary)
         {
-            <span class="badge bg-success">Active</span>
-        }
-        else
-        {
-            <span class="badge bg-secondary">Inactive</span>
+            <form asp-controller="Projects" asp-action="GenerateSummary" method="post" class="ms-3">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="projectId" value="@Model.Id" />
+                <button type="submit" class="btn btn-primary">
+                    ✨ Update AI Summary
+                </button>
+            </form>
         }
     </div>
 
-    <hr />
+    @{
+        var lastSummary = Model.Summaries?
+        .OrderByDescending(s => s.GeneratedAt)
+        .FirstOrDefault();
+    }
 
-    <!-- Informatii generale despre proiect -->
+    @if (lastSummary != null)
+    {
+        <div class="card mb-3 mt-3 ai-summary-card">
+            <div class="card-body">
+                <div class="mb-2 ai-summary">
+                    @Html.Raw(lastSummary.Content)
+                </div>
+                <small class="text-muted">Generated at @lastSummary.GeneratedAt.ToLocalTime()</small>
+            </div>
+        </div>
+    }
+    else
+    {
+        <p class="text-muted mt-3">No project summary available.</p>
+    }
+
+    @* Aici am un buton mic care ma duce direct la sectiunea de AI summary *@
+    <a href="#ai-summary" class="btn btn-outline-primary btn-sm mb-3">
+        🤖 Jump to AI Summary
+    </a>
+
+    <!-- General info -->
     <div class="row mb-4">
         <div class="col-md-4">
             <strong>Created on:</strong><br />
@@ -45,7 +131,7 @@
 
     <hr />
 
-    <!-- Lista de membri -->
+    <!-- Members -->
     <h3>Members</h3>
 
     @if (Model.Members.Any())
@@ -55,9 +141,8 @@
             {
                 <li class="list-group-item">
                     <span>
-                    @* Aici afisez username-ul; daca nu e incarcat/nu exista, cad pe email, apoi pe id *@
-
-                    @(member.User?.UserName ?? member.User?.Email ?? member.UserId)
+                        @* Aici afisez username-ul; daca nu e incarcat/nu exista, cad pe email, apoi pe id *@
+                        @(member.User?.UserName ?? member.User?.Email ?? member.UserId)
                     </span>
                 </li>
             }
@@ -70,7 +155,7 @@
 
     <hr />
 
-    <!-- Lista de task-uri -->
+    <!-- Tasks -->
     <h3>Tasks</h3>
 
     @if (Model.TaskItems != null && Model.TaskItems.Any())
@@ -102,10 +187,10 @@
         <p class="text-muted">No tasks for this project.</p>
     }
 
-
-    <!-- Butoane de navigare -->
-    <div class="mt-4 d-flex gap-2">
-        <a asp-action="Index" class="btn btn-secondary">
+    <!-- Navigation -->
+    <div class="mt-4 d-flex gap-2 flex-wrap">
+        @* Aici trimit explicit la My ca sa nu mai depind de Index/redirect *@
+        <a asp-controller="Projects" asp-action="My" class="btn btn-secondary">
             Back to projects
         </a>
 
@@ -118,3 +203,8 @@
     </div>
 
 </div>
+
+@* buton plutitor care ma duce direct la AI summary, ca sa fie mereu la indemana *@
+<a href="#ai-summary" class="ai-float-btn" title="Jump to AI Summary">
+    🤖
+</a>

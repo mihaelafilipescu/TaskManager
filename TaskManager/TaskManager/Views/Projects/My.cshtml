@@ -10,6 +10,10 @@
     var isAdmin = User.IsInRole("Admin");
 }
 
+@{
+    Layout = "_Layout";
+}
+
 <div class="container py-5">
 
     <!-- Header -->
@@ -46,7 +50,7 @@
                 </div>
 
                 <div class="mt-4">
-                    <a class="btn btn-success btn-lg"
+                    <a class="btn btn functional btn-lg"
                        asp-controller="Projects"
                        asp-action="Create">
                         <i class="bi bi-plus-lg"></i> Create your first project
@@ -68,7 +72,7 @@
                         <div class="card-body p-4">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <h5 class="fw-bold mb-0">@p.Title</h5>
-                                <span class="badge @(p.IsActive ? "text-bg-success" : "text-bg-secondary")">
+                                <span class="badge @(p.IsActive ? "functional" : "static")">
                                     @(p.IsActive ? "Active" : "Inactive")
                                 </span>
                             </div>
@@ -118,23 +122,46 @@
                                 </div>
                             </div>
 
-                            <div class="d-flex gap-2 mt-2">
-                                <a class="btn btn-outline-dark w-100"
-                                   asp-controller="Projects"
-                                   asp-action="Details"
-                                   asp-route-id="@p.Id">
-                                    <i class="bi bi-box-arrow-up-right"></i> Details
-                                </a>
+                            @* Aici le pun pe 2 randuri ca sa nu mai fie inghesuite *@
+                            <div class="row g-2 mt-2">
+                                <div class="col-6">
+                                    <!-- AI Summary: ma duce direct la sectiunea #ai-summary din Details -->
+                                    <a class="btn btn-outline-primary w-100"
+                                       href="@Url.Action("Details", "Projects", new { id = p.Id })#ai-summary">
+                                        <i class="bi bi-robot"></i> AI Summary
+                                    </a>
+                                </div>
 
-                                @* Aici afisez butonul de Delete doar daca sunt Admin sau daca eu sunt organizerul proiectului *@
+                                <div class="col-6">
+                                    <!-- Details -->
+                                    <a class="btn btn-outline-dark w-100"
+                                       asp-controller="Projects"
+                                       asp-action="Details"
+                                       asp-route-id="@p.Id">
+                                        <i class="bi bi-box-arrow-up-right"></i> Details
+                                    </a>
+                                </div>
+
+                                @* Aici afisez Edit + Delete doar daca sunt Admin sau daca eu sunt organizerul proiectului *@
                                 @if (isAdmin || p.OrganizerId == currentUserId)
                                 {
-                                    <a class="btn btn-outline-danger w-100"
-                                       asp-controller="Projects"
-                                       asp-action="Delete"
-                                       asp-route-id="@p.Id">
-                                        <i class="bi bi-trash"></i> Delete
-                                    </a>
+                                    <div class="col-6">
+                                        <a class="btn btn-outline-secondary w-100"
+                                           asp-controller="Projects"
+                                           asp-action="Edit"
+                                           asp-route-id="@p.Id">
+                                            <i class="bi bi-pencil"></i> Edit
+                                        </a>
+                                    </div>
+
+                                    <div class="col-6">
+                                        <a class="btn btn-outline-danger w-100"
+                                           asp-controller="Projects"
+                                           asp-action="Delete"
+                                           asp-route-id="@p.Id">
+                                            <i class="bi bi-trash"></i> Delete
+                                        </a>
+                                    </div>
                                 }
                             </div>
                         </div>

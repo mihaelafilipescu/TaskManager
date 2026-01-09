@@ -9,6 +9,10 @@
         return commentUserId == Model.CurrentUserId || User.IsInRole("Admin");
     }
 }
+@{
+    Layout = "_Layout";
+}
+
 
 <div class="d-flex align-items-center justify-content-between mb-3">
     <div>
@@ -17,9 +21,12 @@
     </div>
 
     <a class="btn btn-outline-secondary"
-       href="@Url.Action("Index", "TaskItems", new { projectId = t.ProjectId })">
-        Back to tasks
+       asp-controller="Projects"
+       asp-action="My">
+        <i class="bi bi-arrow-left"></i> Back to projects
     </a>
+
+
 </div>
 
 <div class="card mb-4">
@@ -84,7 +91,7 @@
                                         asp-items="Model.AssignForm.MemberOptions"></select>
                             </div>
 
-                            <button type="submit" class="btn btn-outline-primary">
+                            <button type="submit" class="btn btn static">
                                 Save assignee
                             </button>
                         </form>
@@ -113,9 +120,9 @@
                                         asp-items="Html.GetEnumSelectList<TaskManager.Models.TaskStatus>()"></select>
                             </div>
 
-                            <button type="submit" class="btn btn-outline-success">
-                                Update status
-                            </button>
+                            <button type="submit" class="btn functional">Update status</button>
+
+
                         </form>
                     </div>
                 </div>

@@ -64,3 +64,234 @@ body {
     background-color: var(--verde-viu);
     color: white;
 }
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder {
+    text-align: start;
+}
+
+:root {
+    --albastru-inchis: rgb(14, 16, 61);
+    --rosu: #570000;
+    --verde-mut: rgb(67, 100, 54);
+    --roz: rgb(255, 194, 192);
+    --portocaliu: rgb(250, 169, 22);
+    --verde-viu: #539638;
+    /* Aici imi definesc si cateva alias-uri "de tema", ca sa fie usor sa schimb ulterior */
+    --tm-primary: var(--albastru-inchis);
+    --tm-danger: var(--rosu);
+    --tm-success: var(--verde-viu);
+    --tm-muted-success: var(--verde-mut);
+    --tm-warning: var(--portocaliu);
+    --tm-soft: var(--roz);
+}
+
+/* stari (clasele tale) */
+.warning {
+    background-color: var(--portocaliu) !important;
+    color: white !important;
+}
+
+.alerta {
+    background-color: var(--rosu) !important;
+    color: white !important;
+}
+
+.bine {
+    background-color: var(--verde-viu) !important;
+    color: white !important;
+}
+
+.progres {
+    background-color: var(--roz) !important;
+    color: black !important;
+}
+
+.static {
+    background-color: var(--albastru-inchis) !important;
+    color: white !important;
+}
+
+.functional {
+    background-color: var(--verde-viu) !important;
+    color: white !important;
+}
+
+/* THEME OVER BOOTSTRAP (global, fara sa-ti rescriu HTML-ul) */
+
+/* Link-uri */
+a {
+    color: var(--tm-primary);
+}
+
+    a:hover {
+        color: var(--tm-danger);
+    }
+
+/* Butoane Bootstrap */
+.btn-primary {
+    background-color: var(--tm-primary) !important;
+    border-color: var(--tm-primary) !important;
+}
+
+    .btn-primary:hover,
+    .btn-primary:focus {
+        background-color: var(--tm-danger) !important;
+        border-color: var(--tm-danger) !important;
+    }
+
+.btn-outline-primary {
+    color: var(--tm-primary) !important;
+    border-color: var(--tm-primary) !important;
+}
+
+    .btn-outline-primary:hover,
+    .btn-outline-primary:focus {
+        background-color: var(--tm-primary) !important;
+        border-color: var(--tm-primary) !important;
+        color: white !important;
+    }
+
+/* Badges Bootstrap (optional, dar te ajuta in dashboard) */
+.badge.bg-success {
+    background-color: var(--tm-success) !important;
+}
+
+.badge.bg-warning {
+    background-color: var(--tm-warning) !important;
+    color: white !important;
+}
+
+.badge.bg-danger {
+    background-color: var(--tm-danger) !important;
+}
+
+.badge.bg-primary {
+    background-color: var(--tm-primary) !important;
+}
+
+/* Focus la input-uri */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--tm-primary) !important;
+    box-shadow: 0 0 0 0.25rem rgba(14, 16, 61, 0.15) !important;
+}
+
+/* Checkbox/Radio accent */
+.form-check-input:checked {
+    background-color: var(--tm-primary) !important;
+    border-color: var(--tm-primary) !important;
+}
+/* Override Bootstrap SUCCESS */
+
+.btn-success {
+    background-color: var(--verde-viu) !important;
+    border-color: var(--verde-viu) !important;
+    color: white !important;
+}
+
+    .btn-success:hover,
+    .btn-success:focus {
+        background-color: var(--verde-mut) !important;
+        border-color: var(--verde-mut) !important;
+        color: white !important;
+    }
+
+/* si pentru badge-uri success, ca sa fie consistent */
+.badge.bg-success {
+    background-color: var(--verde-viu) !important;
+    color: white !important;
+}
+
+.btn-danger {
+    background-color: var(--rosu) !important;
+    border-color: var(--rosu) !important;
+}
+
+.btn-success {
+    background-color: var(--verde-viu) !important;
+    border-color: var(--verde-viu) !important;
+    color: white !important;
+}
+
+    .btn-success:hover,
+    .btn-success:focus {
+        background-color: var(--verde-mut) !important;
+        border-color: var(--verde-mut) !important;
+        color: white !important;
+    }
+/* FORCE Bootstrap SUCCESS COLOR */
+
+/* buttons */
+button.btn-success,
+.btn.btn-success {
+    background-color: var(--verde-viu) !important;
+    border-color: var(--verde-viu) !important;
+    color: white !important;
+}
+
+    button.btn-success:hover,
+    button.btn-success:focus,
+    .btn.btn-success:hover,
+    .btn.btn-success:focus {
+        background-color: var(--verde-mut) !important;
+        border-color: var(--verde-mut) !important;
+        color: white !important;
+    }
+
+/* badges / bg-success */
+.bg-success,
+.badge.bg-success {
+    background-color: var(--verde-mut) !important;
+    color: white !important;
+    /* Badge / background success -> verdele meu */
+    .bg-success,
+    .badge.bg-success {
+        background-color: var(--verde-mut) !important;
+        color: white !important;
+    }
+    /* optional: daca badge-ul are border si arata ciudat */
+    .badge.bg-success {
+        border: none !important;
+    }
+}
+.text-bg-success {
+    --bs-success-rgb: 83, 150, 56 !important; /* #539638 */
+    color: white !important;
+}
+
+.text-bg-secondary {
+    --bs-secondary-rgb: 14, 16, 61 !important; /* albastru-inchis */
+    color: white !important;
+}
+.ai-summary p {
+    margin-bottom: 0.5rem;
+}
+
+.ai-summary ul {
+    margin-bottom: 0;
+    padding-left: 1.2rem;
+}
+
+.ai-summary li {
+    margin-bottom: 0.25rem;
+}
+
+.ai-float-btn {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    width: 52px;
+    height: 52px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    text-decoration: none;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+    z-index: 9999;
+}
+
+.ai-summary-card {
+    border-left: 6px solid currentColor;
+}

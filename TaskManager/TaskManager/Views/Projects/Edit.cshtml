@@ -1,0 +1,70 @@
+﻿@model TaskManager.ViewModels.Projects.ProjectEditVm
+
+@{
+    ViewData["Title"] = "Edit project";
+}
+
+<div class="container py-5">
+
+    <!-- Header -->
+    <div class="row justify-content-center mb-4">
+        <div class="col-12 col-lg-8">
+            <span class="badge text-bg-light border mb-3">Projects</span>
+            <h1 class="display-6 fw-bold mb-2">Edit project</h1>
+            <p class="text-secondary mb-0">
+                Update the title and description for this project.
+            </p>
+        </div>
+    </div>
+
+    <!-- Form Card -->
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-body p-4 p-md-5">
+
+                    <form asp-action="Edit" asp-route-id="@Model.Id" method="post">
+                        @Html.AntiForgeryToken()
+
+                        @* Aici pastrez Id-ul ca sa nu am surprize la POST *@
+                        <input type="hidden" asp-for="Id" />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                        <div class="mb-3">
+                            <label asp-for="Title" class="form-label fw-semibold"></label>
+                            <input asp-for="Title" class="form-control form-control-lg" placeholder="e.g., Website redesign" />
+                            <span asp-validation-for="Title" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Description" class="form-label fw-semibold"></label>
+                            <textarea asp-for="Description"
+                                      class="form-control"
+                                      rows="5"
+                                      placeholder="What is this project about? Key goals, scope, or notes..."></textarea>
+                            <span asp-validation-for="Description" class="text-danger"></span>
+                        </div>
+
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check2-circle"></i> Save changes
+                            </button>
+
+                            @* Aici ma intorc la details ca sa vad imediat rezultatul *@
+                            <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary btn-lg">
+                                <i class="bi bi-arrow-left"></i> Back to details
+                            </a>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

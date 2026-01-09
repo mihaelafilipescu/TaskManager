@@ -27,10 +27,12 @@
     {
         <div class="alert alert-danger">@TempData["Error"]</div>
     }
-    @if (TempData["Success"] != null)
+    @* Aici evit sa afisez mesajul de delete proiect pe pagina Members *@
+    @if (TempData["Success"] != null && TempData["Success"]!.ToString() != "Project deleted successfully.")
     {
         <div class="alert alert-success">@TempData["Success"]</div>
     }
+
 
     <div class="row g-4">
         <div class="col-12 col-lg-5">

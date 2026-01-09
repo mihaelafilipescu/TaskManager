@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using TaskManager.Data;
 using TaskManager.Models;
 using TaskManager.ViewModels.Projects;
+using TaskManager.Services;
 
 namespace TaskManager.Controllers
 {
@@ -13,12 +14,22 @@ namespace TaskManager.Controllers
     {
         private readonly ApplicationDbContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IProjectSummaryAiService _projectSummaryAiService;
 
-        public ProjectsController(ApplicationDbContext db, UserManager<ApplicationUser> userManager)
+        public ProjectsController(
+            ApplicationDbContext db,
+            UserManager<ApplicationUser> userManager,
+            IProjectSummaryAiService projectSummaryAiService)
         {
             _db = db;
             _userManager = userManager;
+            _projectSummaryAiService = projectSummaryAiService;
         }
+        public IActionResult Index()
+        {
+            return RedirectToAction(nameof(My));
+        }
+
 
         // GET: /Projects/Create
         [HttpGet]
@@ -60,7 +71,6 @@ namespace TaskManager.Controllers
             });
             await _db.SaveChangesAsync();
 
-            // acum că avem My(), redirect acolo:
             return RedirectToAction(nameof(My));
         }
 
@@ -86,6 +96,78 @@ namespace TaskManager.Controllers
             return View(projects);
         }
 
+        // GET: /Projects/Edit/5
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            // Aici iau userul curent ca sa verific daca e organizer / admin
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Challenge();
+
+            var project = await _db.Projects
+                .AsNoTracking()
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (project == null)
+                return NotFound();
+
+            // Aici nu permit edit pentru proiectele inactive (soft deleted)
+            if (!project.IsActive)
+                return NotFound();
+
+            // Aici permit edit doar daca sunt admin sau organizer
+            if (!User.IsInRole("Admin") && project.OrganizerId != userId)
+                return Forbid();
+
+            var vm = new ProjectEditVm
+            {
+                Id = project.Id,
+                Title = project.Title,
+                Description = project.Description
+            };
+
+            return View(vm);
+        }
+
+        // POST: /Projects/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, ProjectEditVm vm)
+        {
+            if (id != vm.Id)
+                return BadRequest();
+
+            // Aici iau userul curent ca sa verific drepturi
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Challenge();
+
+            var project = await _db.Projects
+                .FirstOrDefaultAsync(p => p.Id == id);
+
+            if (project == null)
+                return NotFound();
+
+            if (!project.IsActive)
+                return NotFound();
+
+            if (!User.IsInRole("Admin") && project.OrganizerId != userId)
+                return Forbid();
+
+            if (!ModelState.IsValid)
+                return View(vm);
+
+            // Aici fac trim simplu ca sa evit spatii inutile
+            project.Title = vm.Title.Trim();
+            project.Description = vm.Description.Trim();
+
+            await _db.SaveChangesAsync();
+
+            TempData["Success"] = "Project updated successfully.";
+            return RedirectToAction(nameof(Details), new { id = project.Id });
+        }
+
         // GET: /Projects/Details/5
         [HttpGet]
         public async Task<IActionResult> Details(int id)
@@ -103,9 +185,9 @@ namespace TaskManager.Controllers
                 .Include(p => p.Members)
                     .ThenInclude(pm => pm.User)
                 .Include(p => p.TaskItems)
+                .Include(p => p.Summaries)
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            // Daca proiectul nu exista
             if (project == null)
                 return NotFound();
 
@@ -129,8 +211,6 @@ namespace TaskManager.Controllers
             // Aici aleg ce afisez: username, daca nu exista atunci email, daca nici ala nu exista raman pe id
             ViewBag.OrganizerName = organizerUser?.UserName ?? organizerUser?.Email ?? project.OrganizerId;
 
-
-            // Trimit proiectul catre view
             return View(project);
         }
 
@@ -174,7 +254,7 @@ namespace TaskManager.Controllers
                 ProjectId = project.Id,
                 ProjectTitle = project.Title,
                 IsOrganizer = isOrganizer,
-                OrganizerId = project.OrganizerId,   // <-- important
+                OrganizerId = project.OrganizerId,
                 Members = members
             };
 
@@ -229,7 +309,6 @@ namespace TaskManager.Controllers
             {
                 ProjectId = vm.ProjectId,
                 UserId = user.Id
-                // daca ai Role = "Member", seteaza aici
             });
 
             await _db.SaveChangesAsync();
@@ -282,29 +361,23 @@ namespace TaskManager.Controllers
         [HttpGet]
         public async Task<IActionResult> Delete(int id)
         {
-            // Aici pun un log simplu ca sa fiu sigur ca intru in actiunea asta si vad ce id vine din URL
             Console.WriteLine($">>> ProjectsController.Delete GET called with id={id}");
 
-            // Aici caut proiectul dupa id; daca nu exista, e normal sa dau NotFound
             var project = await _db.Projects
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == id);
 
-            // Aici mai pun un log ca sa vad daca am gasit proiectul sau nu
             Console.WriteLine($">>> Project found: {(project != null ? project.Title : "NULL")}");
 
             if (project == null)
                 return NotFound();
 
-            // Aici nu mai permit stergere/confirmare pentru proiectele deja inactive
             if (!project.IsActive)
                 return NotFound();
 
-            // Aici verific drepturile: Admin sau Organizer
             if (!await IsAdminOrOrganizerAsync(project))
                 return Forbid();
 
-            // Aici e esential: trimit proiectul ca Model catre view
             return View(project);
         }
 
@@ -313,37 +386,84 @@ namespace TaskManager.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            // Aici iau proiectul real (tracked), ca sa pot modifica IsActive
             var project = await _db.Projects.FirstOrDefaultAsync(p => p.Id == id);
             if (project == null)
                 return NotFound();
 
-            // Aici daca e deja inactiv, nu mai fac nimic (doar ma intorc la lista)
             if (!project.IsActive)
                 return RedirectToAction(nameof(My));
 
-            // Aici verific iar drepturile, pentru ca POST-ul e actiunea care chiar modifica datele
             if (!await IsAdminOrOrganizerAsync(project))
                 return Forbid();
 
-            // Aici fac soft delete ca sa evit probleme cu FK (task-uri, membri, comentarii)
             project.IsActive = false;
 
             await _db.SaveChangesAsync();
 
-            TempData["Success"] = "Project deleted successfully.";
+            TempData["ProjectDeleteSuccess"] = "Project deleted successfully.";
             return RedirectToAction(nameof(My));
         }
 
         private async Task<bool> IsAdminOrOrganizerAsync(Project project)
         {
-            // Aici iau userId ca sa pot compara daca eu sunt organizerul proiectului
             var userId = _userManager.GetUserId(User);
             if (string.IsNullOrWhiteSpace(userId))
                 return false;
 
-            // Aici permit stergere daca sunt admin sau daca sunt organizer (creatorul proiectului)
             return User.IsInRole("Admin") || project.OrganizerId == userId;
         }
+
+        //AI SUMMARY
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async System.Threading.Tasks.Task<IActionResult> GenerateSummary(int projectId)
+        {
+            // Aici iau userul curent; daca nu e logat, nu are cum sa genereze
+            var userId = _userManager.GetUserId(User);
+            if (string.IsNullOrWhiteSpace(userId))
+                return Forbid();
+
+            // Aici iau proiectul cu membrii ca sa pot verifica drepturile (member/organizer/admin)
+            var project = await _db.Projects
+                .Include(p => p.Members)
+                .FirstOrDefaultAsync(p => p.Id == projectId);
+
+            if (project == null || !project.IsActive)
+                return NotFound();
+
+            // Aici verific drepturile: Admin / Organizer / membru activ
+            var isAdmin = User.IsInRole("Admin");
+            var isOrganizer = project.OrganizerId == userId;
+            var isActiveMember = project.Members.Any(m => m.UserId == userId && m.IsActive);
+
+            if (!isAdmin && !isOrganizer && !isActiveMember)
+                return Forbid();
+
+            // aici se apeleaza AI-ul (Gemini)
+            var aiResult = await _projectSummaryAiService.GenerateProjectSummaryAsync(projectId);
+
+            // daca AI-ul nu raspunde, salvam un mesaj safe
+            // Pun si protectie la null, ca sa nu dea warning / exceptie pe Content
+            var contentToSave = aiResult.Success && !string.IsNullOrWhiteSpace(aiResult.Summary)
+                ? aiResult.Summary
+                : "AI summary could not be generated at this time.";
+
+            // salvam rezultatul in baza de date
+            var summary = new ProjectSummary
+            {
+                ProjectId = projectId,
+                Content = contentToSave,
+                GeneratedAt = DateTime.UtcNow
+            };
+
+            _db.ProjectSummaries.Add(summary);
+            await _db.SaveChangesAsync();
+
+            // Aici trimit inapoi la Details direct pe sectiunea de AI summary
+            var url = Url.Action("Details", "Projects", new { id = projectId }) ?? "/Projects/My";
+            return Redirect(url + "#ai-summary");
+
+        }
+
     }
 }
