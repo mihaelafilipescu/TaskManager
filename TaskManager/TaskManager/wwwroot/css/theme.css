@@ -1,0 +1,37 @@
+﻿:root {
+    --albastru-inchis: rgb(14, 16, 61);
+    --rosu: #570000;
+    --verde-mut: rgb(67, 100, 54);
+    --roz: rgb(255, 194, 192);
+    --portocaliu: rgb(250, 169, 22);
+    --verde-viu: #539638;
+}
+
+/* Force Bootstrap SUCCESS everywhere */
+.btn-success,
+.btn.btn-success,
+button.btn-success,
+input.btn-success {
+    background-color: var(--verde-viu) !important;
+    border-color: var(--verde-viu) !important;
+    color: white !important;
+}
+
+    .btn-success:hover,
+    .btn-success:focus,
+    .btn.btn-success:hover,
+    .btn.btn-success:focus,
+    button.btn-success:hover,
+    button.btn-success:focus,
+    input.btn-success:hover,
+    input.btn-success:focus {
+        background-color: var(--verde-mut) !important;
+        border-color: var(--verde-mut) !important;
+        color: white !important;
+    }
+
+.bg-success,
+.badge.bg-success {
+    background-color: var(--verde-viu) !important;
+    color: white !important;
+}

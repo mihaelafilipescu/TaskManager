@@ -416,3 +416,15 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+# build outputs
+**/bin/
+**/obj/
+
+# uploads (user content)
+TaskManager/wwwroot/uploads/
+
+# optional: local css tooling junk (daca nu vrei sa fie in git)
+TaskManager/wwwroot/css/.editorconfig
+
+# optional: random notes
+*.txt
